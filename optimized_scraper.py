@@ -81,9 +81,9 @@ def get_driver():
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
         # Verify browser capabilities
-        st.write("Driver capabilities:")
-        st.write(f"Browser version: {driver.capabilities.get('browserVersion', 'unknown')}")
-        st.write(f"ChromeDriver version: {driver.capabilities.get('chrome', {}).get('chromedriverVersion', 'unknown')}")
+        # st.write("Driver capabilities:")
+        # st.write(f"Browser version: {driver.capabilities.get('browserVersion', 'unknown')}")
+        # st.write(f"ChromeDriver version: {driver.capabilities.get('chrome', {}).get('chromedriverVersion', 'unknown')}")
         
         return driver
         
