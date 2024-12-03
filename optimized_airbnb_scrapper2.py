@@ -330,6 +330,13 @@ def get_driver():
             
         st.code(traceback.format_exc())
         raise
+
+
+
+
+
+
+
 @st.cache_data(ttl=CACHE_TTL_HOURS * 3600)
 def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
     """Scrape all listings for a given location with caching."""
@@ -338,13 +345,59 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
         driver = get_driver()
         all_listings = []
         listings_per_page = []
+        today = datetime.now()
+        check_in_date = today + timedelta(days=1)
+        check_out = check_in_date + timedelta(days=5)
+
+                # Convert dates to the format expected by the website (e.g., "YYYY-MM-DD")
+        # checkin_str = check_in_date.strftime('%Y-%m-%d')
+        # checkout_str = check_out.strftime('%Y-%m-%d')
 
         # Get currency rates once
         currency_rates, _ = get_currency_rates()
 
         # Get first page
-        search_url = f"https://www.airbnb.co.in/s/{urllib.parse.quote(search_location)}/homes"
+        #search_url = f"https://www.airbnb.co.in/s/{urllib.parse.quote(search_location)}/homes"
+        search_url = "https://www.airbnb.co.in/"
         driver.get(search_url)
+        time.sleep(5) ## added on 3rd December 2024
+        where_to_location_input = driver.find_element(By.XPATH, "//*[@id='bigsearch-query-location-input' and @data-testid='structured-search-input-field-query']")
+        # check_in = driver.find_element(By.XPATH,)
+        where_to_location_input.send_keys(search_location)
+        time.sleep(3)
+        checkin_button = driver.find_element(By.XPATH, "//*[@role='button' and @tabindex='0' and @data-testid='structured-search-input-field-split-dates-0']")
+        checkin_button.click()
+
+        # Step 2: Select Check-in Date
+        today = datetime.now()
+        checkin_date = today + timedelta(days=1)  # Next day
+        checkin_day = checkin_date.day
+        checkin_xpath = f"//td[@data-date='{checkin_date.strftime('%Y-%m-%d')}']"
+        checkin_element = driver.find_element(By.XPATH, checkin_xpath)
+        checkin_element.click()
+
+        time.sleep(2)
+
+        # Step 3: Click Check-out button
+        checkout_button = driver.find_element(By.XPATH, "//*[@role='button' and @tabindex='0' and @data-testid='structured-search-input-field-split-dates-1']")
+        checkout_button.click()
+
+        # Wait for the calendar to load
+        time.sleep(2)
+
+        # Step 4: Select Check-out Date
+        checkout_date = checkin_date + timedelta(days=5)  # 5 days after check-in
+        checkout_day = checkout_date.day
+        checkout_xpath = f"//td[@data-date='{checkout_date.strftime('%Y-%m-%d')}']"
+        checkout_element = driver.find_element(By.XPATH, checkout_xpath)
+        checkout_element.click()
+
+        time.sleep(2)
+
+        span_element = driver.find_element(By.XPATH, "//span[@class='t1dqvypu atm_9s_1ulexfb atm_vy_1osqo2v atm_e2_1osqo2v atm_jb_uuw12j atm_2w_1egmwxu atm_k4_idpfg4 atm_uc_kn5pbq atm_2g_1mygper atm_k4_kb7nvz_1nos8r atm_uc_yz1f4_csw3t1 atm_k4_idpfg4_csw3t1 atm_tr_kftzq4_csw3t1 dir dir-ltr']")
+        span_element.click()
+    
+
 
         while True:
             # Wait for listings to load
