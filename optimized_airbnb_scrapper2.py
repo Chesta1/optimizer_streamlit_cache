@@ -380,27 +380,41 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
                     url_meta = element.find('meta', {'itemprop': 'url'})
                     if url_meta and url_meta.get('content'):
                         price_str = element.find('span', class_="_11jcbg2").text.strip() if element.find('span', class_="_11jcbg2") else "N/A"
+                        # Get total price for 6 days
+                        total_price_element = element.find('div', class_="_tt122m")
+                        total_price = total_price_element.find('span', {'aria-hidden': 'true'}).text.strip() if total_price_element else "N/A"
+                        
+   
                         ## added on 3rd dec 2024
                         listing_card = element.find('div', attrs={'data-testid': 'listing-card-title'})
                         listing_title = listing_card.text.strip() if listing_card else "N/A"
-                        listing_testid = listing_card.get('data-testid', 'N/A') if listing_card else "N/A"
-                        ## added on 3rd dec 2024
-                        
+                        # listing_testid = listing_card.get('data-testid', 'N/A') if listing_card else "N/A"
+                        # ## added on 3rd dec 2024
+
                         # Convert price to multiple currencies
                         prices = convert_price(price_str, currency_rates) if price_str != "N/A" else {
                             'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'
                         }
+
+                        total_prices = convert_price(total_price, currency_rates) if total_price != "N/A" else {
+                'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'}
+                        
                         listing_info = {
                             'url': url_meta['content'].split('?')[0],
                             'price_inr': prices['INR'],
                             'price_sar': prices['SAR'],
                             'price_aed': prices['AED'],
                             'price_usd': prices['USD'],
+                            'total_price_inr': total_prices['INR'],
+                            'total_price_sar': total_prices['SAR'],
+                            'total_price_aed': total_prices['AED'],
+                            'total_price_usd': total_prices['USD'],
+              
                             'title': element.find('meta', {'itemprop': 'name'})['content'] if element.find('meta', {'itemprop': 'name'}) else "N/A",
                             'rating': element.find('span', text=lambda t: t and 'average rating' in t).text.strip() if element.find('span', text=lambda t: t and 'average rating' in t) else "N/A",
                             'location': search_location,
                             'listing_card_title': listing_title,
-                            'listing_card_testid': listing_testid
+                            # 'listing_card_testid': listing_testid
                         }
                         page_listings.append(listing_info)
                 except Exception as e:
