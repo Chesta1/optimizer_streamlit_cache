@@ -370,11 +370,12 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
 
         # Step 2: Select Check-in Date
         today = datetime.now()
-        checkin_date = today + timedelta(days=1)  # Next day
-        checkin_day = checkin_date.day
-        checkin_xpath = f"//td[@data-date='{checkin_date.strftime('%Y-%m-%d')}']"
-        checkin_element = driver.find_element(By.XPATH, checkin_xpath)
-        checkin_element.click()
+        checkin_date = today + timedelta(days=1)
+        # Format the date for the aria-label
+        formatted_date = checkin_date.strftime("%-d, %A, %B %Y")
+        checkin_date_aria_label = f"{formatted_date}. Available. Select as check-in date."
+        checkin_date_button = driver.find_element(By.XPATH, f"//button[@role='button' and @aria-label='{checkin_date_aria_label}']")
+        checkin_date_button.click()
 
         time.sleep(2)
 
@@ -386,11 +387,13 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
         time.sleep(2)
 
         # Step 4: Select Check-out Date
-        checkout_date = checkin_date + timedelta(days=5)  # 5 days after check-in
-        checkout_day = checkout_date.day
-        checkout_xpath = f"//td[@data-date='{checkout_date.strftime('%Y-%m-%d')}']"
-        checkout_element = driver.find_element(By.XPATH, checkout_xpath)
-        checkout_element.click()
+        checkout_date = checkin_date + timedelta(days=5)
+        formatted_checkout_date = checkout_date.strftime("%-d, %A, %B %Y")
+        checkout_date_aria_label = f"{formatted_checkout_date}. Available. Select as check-out date."
+
+        # Locate and click the check-out date button
+        checkout_date_button = driver.find_element(By.XPATH, f"//button[@role='button' and @aria-label='{checkout_date_aria_label}']")
+        checkout_date_button.click()
 
         time.sleep(2)
 
