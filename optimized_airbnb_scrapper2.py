@@ -52,96 +52,96 @@ def init_db():
         )
     """)
 
-    # Create currency rates table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS currency_rates(
-            base_currency TEXT,
-            target_currency TEXT,
-            rate REAL,
-            timestamp TEXT,
-            PRIMARY KEY (base_currency, target_currency)
-        )
-    """)
+    # # Create currency rates table
+    # cursor.execute("""
+    #     CREATE TABLE IF NOT EXISTS currency_rates(
+    #         base_currency TEXT,
+    #         target_currency TEXT,
+    #         rate REAL,
+    #         timestamp TEXT,
+    #         PRIMARY KEY (base_currency, target_currency)
+    #     )
+    # """)
     conn.commit()
     conn.close()
 
-def get_currency_rates() -> Tuple[Dict[str, float], str]:
-    """
-    Get currency rates from database or API, ensuring daily rate updates.
+# def get_currency_rates() -> Tuple[Dict[str, float], str]:
+#     """
+#     Get currency rates from database or API, ensuring daily rate updates.
 
-    Returns:
-    Tuple[Dict[str, float], str]: Dictionary of currency rates with target currencies as keys and the timestamp
-    """
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+#     Returns:
+#     Tuple[Dict[str, float], str]: Dictionary of currency rates with target currencies as keys and the timestamp
+#     """
+#     conn = sqlite3.connect(DB_FILE)
+#     cursor = conn.cursor()
 
-    try:
-        # Get today's date in the current timezone
-        today = datetime.now().date().strftime("%Y-%m-%d")
-        logger.info(f"Checking for currency rates for today: {today}")
+#     try:
+#         # Get today's date in the current timezone
+#         today = datetime.now().date().strftime("%Y-%m-%d")
+#         logger.info(f"Checking for currency rates for today: {today}")
 
-        # Check for rates for today
-        cursor.execute("""
-            SELECT target_currency, rate, timestamp
-            FROM currency_rates 
-            WHERE base_currency = ? AND date(timestamp) = ?
-        """, (BASE_CURRENCY, today))
+#         # Check for rates for today
+#         cursor.execute("""
+#             SELECT target_currency, rate, timestamp
+#             FROM currency_rates 
+#             WHERE base_currency = ? AND date(timestamp) = ?
+#         """, (BASE_CURRENCY, today))
 
-        existing_rates = cursor.fetchall()
-        logger.info(f"Existing rates found: {existing_rates}")
+#         existing_rates = cursor.fetchall()
+#         logger.info(f"Existing rates found: {existing_rates}")
 
-        # If rates exist for all target currencies, return them
-        if len(existing_rates) == len(TARGET_CURRENCIES):
-            rates_dict = {rate[0]: rate[1] for rate in existing_rates}
-            # Assume all timestamps are the same; take the first one
-            timestamp = existing_rates[0][2]
-            logger.info(f"Returning cached rates: {rates_dict} at {timestamp}")
-            return rates_dict, timestamp
+#         # If rates exist for all target currencies, return them
+#         if len(existing_rates) == len(TARGET_CURRENCIES):
+#             rates_dict = {rate[0]: rate[1] for rate in existing_rates}
+#             # Assume all timestamps are the same; take the first one
+#             timestamp = existing_rates[0][2]
+#             logger.info(f"Returning cached rates: {rates_dict} at {timestamp}")
+#             return rates_dict, timestamp
 
-        # If not, fetch new rates from API
-        url = "https://api.currencyapi.com/v3/latest"
-        params = {
-            "apikey": CURRENCY_API_KEY,
-            "base_currency": BASE_CURRENCY,
-            "currencies": ",".join(TARGET_CURRENCIES)
-        }
+#         # If not, fetch new rates from API
+#         url = "https://api.currencyapi.com/v3/latest"
+#         params = {
+#             "apikey": CURRENCY_API_KEY,
+#             "base_currency": BASE_CURRENCY,
+#             "currencies": ",".join(TARGET_CURRENCIES)
+#         }
 
-        response = requests.get(url, params=params)
-        logger.info(f"API Response Status Code: {response.status_code}")
+#         response = requests.get(url, params=params)
+#         logger.info(f"API Response Status Code: {response.status_code}")
 
-        if response.status_code == 200:
-            data = response.json()
-            logger.info(f"API Response Data: {data}")
+#         if response.status_code == 200:
+#             data = response.json()
+#             logger.info(f"API Response Data: {data}")
 
-            rates = {}
-            # Use the exact current timestamp for storage
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#             rates = {}
+#             # Use the exact current timestamp for storage
+#             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # Clear old rates for this base currency
-            cursor.execute("DELETE FROM currency_rates WHERE base_currency = ?", (BASE_CURRENCY,))
+#             # Clear old rates for this base currency
+#             cursor.execute("DELETE FROM currency_rates WHERE base_currency = ?", (BASE_CURRENCY,))
 
-            # Store new rates
-            for currency in TARGET_CURRENCIES:
-                rate = data['data'][currency]['value']
-                rates[currency] = rate
-                logger.info(f"Storing rate for {currency}: {rate}")
-                cursor.execute("""
-                    INSERT INTO currency_rates (base_currency, target_currency, rate, timestamp)
-                    VALUES (?, ?, ?, ?)
-                """, (BASE_CURRENCY, currency, rate, timestamp))
+#             # Store new rates
+#             for currency in TARGET_CURRENCIES:
+#                 rate = data['data'][currency]['value']
+#                 rates[currency] = rate
+#                 logger.info(f"Storing rate for {currency}: {rate}")
+#                 cursor.execute("""
+#                     INSERT INTO currency_rates (base_currency, target_currency, rate, timestamp)
+#                     VALUES (?, ?, ?, ?)
+#                 """, (BASE_CURRENCY, currency, rate, timestamp))
 
-            conn.commit()
-            logger.info(f"Final rates to return: {rates} at {timestamp}")
-            return rates, timestamp
-        else:
-            logger.error(f"Failed to fetch currency rates: {response.status_code}")
-            return {}, ""
+#             conn.commit()
+#             logger.info(f"Final rates to return: {rates} at {timestamp}")
+#             return rates, timestamp
+#         else:
+#             logger.error(f"Failed to fetch currency rates: {response.status_code}")
+#             return {}, ""
             
-    except Exception as e:
-        logger.error(f"Error getting currency rates: {str(e)}")
-        return {}, ""
-    finally:
-        conn.close()
+#     except Exception as e:
+#         logger.error(f"Error getting currency rates: {str(e)}")
+#         return {}, ""
+#     finally:
+#         conn.close()
 
 def extract_price_value(price_str: str) -> float:
     """Extract numeric price value from string."""
@@ -152,16 +152,16 @@ def extract_price_value(price_str: str) -> float:
     except:
         return 0.0
 
-def convert_price(price_str: str, rates: Dict[str, float]) -> Dict[str, str]:
-    """Convert price to multiple currencies."""
-    price_value = extract_price_value(price_str)
-    converted_prices = {
-        'INR': f"₹{price_value:,.2f}",
-        'SAR': f"SAR {price_value * rates.get('SAR', 0):,.2f}",
-        'AED': f"AED {price_value * rates.get('AED', 0):,.2f}",
-        'USD': f"${price_value * rates.get('USD', 0):,.2f}"
-    }
-    return converted_prices
+# def convert_price(price_str: str, rates: Dict[str, float]) -> Dict[str, str]:
+#     """Convert price to multiple currencies."""
+#     price_value = extract_price_value(price_str)
+#     converted_prices = {
+#         'INR': f"₹{price_value:,.2f}",
+#         'SAR': f"SAR {price_value * rates.get('SAR', 0):,.2f}",
+#         'AED': f"AED {price_value * rates.get('AED', 0):,.2f}",
+#         'USD': f"${price_value * rates.get('USD', 0):,.2f}"
+#     }
+#     return converted_prices
 
 def is_location_cached(location: str) -> bool:
     """Check if location is cached and within TTL."""
@@ -355,10 +355,10 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
         checkout_str = check_out.strftime('%Y-%m-%d')
 
         # Get currency rates once
-        currency_rates, _ = get_currency_rates()
+        # currency_rates, _ = get_currency_rates()
 
         # Get first page
-        base_url = f"https://www.airbnb.co.in/s/{urllib.parse.quote(search_location)}/homes"
+        base_url = f"https://www.airbnb.ae/s/{urllib.parse.quote(search_location)}/homes"
         # Add date parameters
         url_with_dates = f"{base_url}?checkin={checkin_str}&checkout={checkout_str}"
        
@@ -391,24 +391,24 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
                         # listing_testid = listing_card.get('data-testid', 'N/A') if listing_card else "N/A"
                         # ## added on 3rd dec 2024
 
-                        # Convert price to multiple currencies
-                        prices = convert_price(price_str, currency_rates) if price_str != "N/A" else {
-                            'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'
-                        }
+                #         # Convert price to multiple currencies
+                #         prices = convert_price(price_str, currency_rates) if price_str != "N/A" else {
+                #             'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'
+                #         }
 
-                        total_prices = convert_price(total_price, currency_rates) if total_price != "N/A" else {
-                'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'}
+                #         total_prices = convert_price(total_price, currency_rates) if total_price != "N/A" else {
+                # 'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'}
                         
                         listing_info = {
                             'url': url_meta['content'].split('?')[0],
-                            'price_inr': prices['INR'],
-                            'price_sar': prices['SAR'],
-                            'price_aed': prices['AED'],
-                            'price_usd': prices['USD'],
-                            'total_price_inr': total_prices['INR'],
-                            'total_price_sar': total_prices['SAR'],
-                            'total_price_aed': total_prices['AED'],
-                            'total_price_usd': total_prices['USD'],
+                            # 'price_inr': prices['INR'],
+                            # 'price_sar': prices['SAR'],
+                            'price_aed': price_str,
+                            # 'price_usd': prices['USD'],
+                            # 'total_price_inr': total_prices['INR'],
+                            # 'total_price_sar': total_prices['SAR'],
+                            'total_price_aed': total_price,
+                            # 'total_price_usd': total_prices['USD'],
               
                             'title': element.find('meta', {'itemprop': 'name'})['content'] if element.find('meta', {'itemprop': 'name'}) else "N/A",
                             'rating': element.find('span', text=lambda t: t and 'average rating' in t).text.strip() if element.find('span', text=lambda t: t and 'average rating' in t) else "N/A",
@@ -447,36 +447,36 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
         if driver:
             driver.quit()
 
-def clear_currency_rates_cache():
-    """Clear cached currency rates from the database."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    try:
-        cursor.execute("DELETE FROM currency_rates WHERE base_currency = ?", (BASE_CURRENCY,))
-        conn.commit()
-        # Clear Streamlit cache related to currency rates if any
-        st.cache_data.clear()
-        logger.info("Currency rates cache cleared successfully.")
-    except Exception as e:
-        logger.error(f"Error clearing currency rates cache: {str(e)}")
-    finally:
-        conn.close()
+# def clear_currency_rates_cache():
+#     """Clear cached currency rates from the database."""
+#     conn = sqlite3.connect(DB_FILE)
+#     cursor = conn.cursor()
+#     try:
+#         cursor.execute("DELETE FROM currency_rates WHERE base_currency = ?", (BASE_CURRENCY,))
+#         conn.commit()
+#         # Clear Streamlit cache related to currency rates if any
+#         st.cache_data.clear()
+#         logger.info("Currency rates cache cleared successfully.")
+#     except Exception as e:
+#         logger.error(f"Error clearing currency rates cache: {str(e)}")
+#     finally:
+#         conn.close()
 
 def create_sidebar():
     """Create and manage the sidebar with cache information."""
     with st.sidebar:
         st.title("Cache Management")
 
-        # Display current exchange rates
-        st.subheader("Today's Exchange Rates")
-        rates, rates_timestamp = get_currency_rates()
-        if rates:
-            st.write(f"**Exchange Rates as of:** {rates_timestamp}")
-            st.write(f"1 {BASE_CURRENCY} = {rates['SAR']:.4f} SAR")
-            st.write(f"1 {BASE_CURRENCY} = {rates['AED']:.4f} AED")
-            st.write(f"1 {BASE_CURRENCY} = {rates['USD']:.4f} USD")
-        else:
-            st.write("Failed to fetch exchange rates.")
+        # # Display current exchange rates
+        # st.subheader("Today's Exchange Rates")
+        # rates, rates_timestamp = get_currency_rates()
+        # if rates:
+        #     st.write(f"**Exchange Rates as of:** {rates_timestamp}")
+        #     st.write(f"1 {BASE_CURRENCY} = {rates['SAR']:.4f} SAR")
+        #     st.write(f"1 {BASE_CURRENCY} = {rates['AED']:.4f} AED")
+        #     st.write(f"1 {BASE_CURRENCY} = {rates['USD']:.4f} USD")
+        # else:
+        #     st.write("Failed to fetch exchange rates.")
 
         # Display cached locations and timestamps
         st.subheader("Cached Locations")
@@ -505,11 +505,11 @@ def create_sidebar():
                 clear_location_cache(selected_location)
                 st.success(f"Cache cleared for {selected_location}!")
 
-        # Currency Rates Cache Controls
-        st.subheader("Currency Rates Cache Controls")
-        if st.button("Clear Currency Rates Cache"):
-            clear_currency_rates_cache()
-            st.success("Currency rates cache cleared successfully!")
+        # # Currency Rates Cache Controls
+        # st.subheader("Currency Rates Cache Controls")
+        # if st.button("Clear Currency Rates Cache"):
+        #     clear_currency_rates_cache()
+        #     st.success("Currency rates cache cleared successfully!")
 
 def main():
     st.set_page_config(page_title="Airbnb Scraper", layout="wide")
