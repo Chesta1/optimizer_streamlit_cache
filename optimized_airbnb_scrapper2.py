@@ -348,7 +348,7 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
 
         today = datetime.now()
         check_in_date = today + timedelta(days=1)
-        check_out = check_in_date + timedelta(days=5)
+        check_out = check_in_date + timedelta(days=6)
 
         # Convert dates to the format expected by the website (e.g., "YYYY-MM-DD")
         checkin_str = check_in_date.strftime('%Y-%m-%d')
