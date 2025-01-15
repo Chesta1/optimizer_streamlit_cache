@@ -26,9 +26,9 @@ CACHE_TTL_HOURS = 24
 DB_FILE = "locations_cache.db"
 WAIT_TIMEOUT = 10
 PAGE_LOAD_DELAY = 3
-CURRENCY_API_KEY = "cur_live_3JddjDyXw3TlQEHbmeThynFz81KeoCxsFe9tLPxI"  # Replace with your actual API key
-BASE_CURRENCY = "INR"
-TARGET_CURRENCIES = ["SAR", "AED", "USD"]
+# CURRENCY_API_KEY = "cur_live_3JddjDyXw3TlQEHbmeThynFz81KeoCxsFe9tLPxI"  # Replace with your actual API key
+# BASE_CURRENCY = "INR"
+# TARGET_CURRENCIES = ["SAR", "AED", "USD"]
 
 # Setup logging
 def setup_logging():
@@ -221,7 +221,7 @@ def clear_all_cache():
     cursor = conn.cursor()
     try:
         cursor.execute("DELETE FROM location_cache")
-        cursor.execute("DELETE FROM currency_rates")
+        # cursor.execute("DELETE FROM currency_rates")
         conn.commit()
         # Clear Streamlit cache as well
         st.cache_data.clear()
@@ -245,8 +245,8 @@ def cleanup_stale_cache():
         cursor.execute("DELETE FROM location_cache WHERE timestamp < ?", (threshold,))
 
         # Clear currency rates older than today
-        today = datetime.now().date().strftime("%Y-%m-%d")
-        cursor.execute("DELETE FROM currency_rates WHERE date(timestamp) < ?", (today,))
+        # today = datetime.now().date().strftime("%Y-%m-%d")
+        # cursor.execute("DELETE FROM currency_rates WHERE date(timestamp) < ?", (today,))
 
         conn.commit()
 
@@ -358,7 +358,7 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
         # currency_rates, _ = get_currency_rates()
 
         # Get first page
-        base_url = f"https://www.airbnb.ae/s/{urllib.parse.quote(search_location)}/homes"
+        base_url = f"https://www.airbnb.com/s/{urllib.parse.quote(search_location)}/homes"
         # Add date parameters
         url_with_dates = f"{base_url}?checkin={checkin_str}&checkout={checkout_str}"
        
@@ -400,20 +400,20 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
                 # 'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'}
                         
                         listing_info = {
-                            'url': url_meta['content'].split('?')[0],
+                            'Listing-URL': url_meta['content'].split('?')[0],
                             # 'price_inr': prices['INR'],
                             # 'price_sar': prices['SAR'],
-                            'price_aed': price_str,
+                            'Price Per Day (USD)': price_str,
                             # 'price_usd': prices['USD'],
                             # 'total_price_inr': total_prices['INR'],
                             # 'total_price_sar': total_prices['SAR'],
-                            'total_price_aed': total_price,
+                            'Total Price (7-Days in USD)': total_price,
                             # 'total_price_usd': total_prices['USD'],
               
-                            'title': element.find('meta', {'itemprop': 'name'})['content'] if element.find('meta', {'itemprop': 'name'}) else "N/A",
+                            'Listing Description': element.find('meta', {'itemprop': 'name'})['content'] if element.find('meta', {'itemprop': 'name'}) else "N/A",
                             'rating': element.find('span', text=lambda t: t and 'average rating' in t).text.strip() if element.find('span', text=lambda t: t and 'average rating' in t) else "N/A",
                             'location': search_location,
-                            'listing_card_title': listing_title,
+                            'Property Type & Location': listing_title,
                             # 'listing_card_testid': listing_testid
                         }
                         page_listings.append(listing_info)
@@ -561,6 +561,7 @@ def main():
                 with tab2:
                     st.write("### Raw Data")
                     df = pd.DataFrame(listings)
+                    df.index.name = "S.No."
                     st.dataframe(df)
 
                     # CSV Download
