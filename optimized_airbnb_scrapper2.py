@@ -407,7 +407,7 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
                             # 'price_usd': prices['USD'],
                             # 'total_price_inr': total_prices['INR'],
                             # 'total_price_sar': total_prices['SAR'],
-                            'Total Price (7-Days in USD)': total_price,
+                            '7-Day Stay Cost (USD)': total_price,
                             # 'total_price_usd': total_prices['USD'],
               
                             'Listing Description': element.find('meta', {'itemprop': 'name'})['content'] if element.find('meta', {'itemprop': 'name'}) else "N/A",
