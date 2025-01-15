@@ -337,7 +337,7 @@ def get_driver():
 
 
 
-@st.cache_data(ttl=CACHE_TTL_HOURS * 3600)
+@st.cache_data(ttl=CACHE_TTL_HOURS * 3600,show_spinner=False)
 def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
     """Scrape all listings for a given location with caching."""
     # driver = None
@@ -411,8 +411,8 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
                             # 'total_price_usd': total_prices['USD'],
               
                             'Listing Description': element.find('meta', {'itemprop': 'name'})['content'] if element.find('meta', {'itemprop': 'name'}) else "N/A",
-                            'rating': element.find('span', text=lambda t: t and 'average rating' in t).text.strip() if element.find('span', text=lambda t: t and 'average rating' in t) else "N/A",
-                            'location': search_location,
+                            'Rating': element.find('span', text=lambda t: t and 'average rating' in t).text.strip() if element.find('span', text=lambda t: t and 'average rating' in t) else "N/A",
+                            'Location': search_location,
                             'Property Type & Location': listing_title,
                             # 'listing_card_testid': listing_testid
                         }
