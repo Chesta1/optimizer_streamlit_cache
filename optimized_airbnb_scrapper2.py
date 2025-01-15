@@ -306,7 +306,7 @@ def get_driver():
             log_path='/tmp/chromedriver.log',
             service_args=['--verbose']
         )
-        st.write("Attempting to initialize ChromeDriver...")
+        # st.write("Attempting to initialize ChromeDriver...")
         
         # Try to create driver
         driver = webdriver.Chrome(service=service, options=chrome_options)
