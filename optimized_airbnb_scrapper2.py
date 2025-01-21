@@ -152,6 +152,22 @@ def extract_price_value(price_str: str) -> float:
     except:
         return 0.0
 
+def normalize_location(location: str) -> str:
+    """Normalize location string by trimming spaces and standardizing case."""
+    try:
+        # Remove leading and trailing spaces
+        location = location.strip()
+        # Convert to lowercase for uniformity
+        location = location.lower()
+        # Replace multiple spaces with a single space
+        location = re.sub(r'\s+', ' ', location)
+        # Optionally capitalize the first letter of each word
+        location = location.title()
+        return location
+    except Exception as e:
+        logger.error(f"Error normalizing location: {str(e)}")
+        return location
+
 # def convert_price(price_str: str, rates: Dict[str, float]) -> Dict[str, str]:
 #     """Convert price to multiple currencies."""
 #     price_value = extract_price_value(price_str)
@@ -168,7 +184,8 @@ def is_location_cached(location: str) -> bool:
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT timestamp FROM location_cache WHERE location = ?", (location,))
+        normalized_location = normalize_location(location)
+        cursor.execute("SELECT timestamp FROM location_cache WHERE location = ?", (normalized_location,))
         row = cursor.fetchone()
         if row:
             cached_time = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
@@ -182,11 +199,12 @@ def update_location_cache(location: str):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     try:
+        normalized_location = normalize_location(location)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute("""
             INSERT OR REPLACE INTO location_cache (location, timestamp)
             VALUES (?, ?)
-        """, (location, timestamp))
+        """, (normalized_location, timestamp))
         conn.commit()
     finally:
         conn.close()
@@ -196,7 +214,9 @@ def get_cached_locations() -> List[Tuple[str, str]]:
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     try:
-        return cursor.execute("SELECT location, timestamp FROM location_cache").fetchall()
+        # return cursor.execute("SELECT location, timestamp FROM location_cache").fetchall()
+        locations = cursor.execute("SELECT location, timestamp FROM location_cache").fetchall()
+        return [(normalize_location(loc[0]), loc[1]) for loc in locations]
     finally:
         conn.close()
 
@@ -345,7 +365,7 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
         driver = get_driver()
         all_listings = []
         listings_per_page = []
-
+        normalized_location = normalize_location(search_location)
         today = datetime.now()
         check_in_date = today + timedelta(days=1)
         check_out = check_in_date + timedelta(days=6)
@@ -437,7 +457,7 @@ def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
                 break
 
         # Update location cache in database
-        update_location_cache(search_location)
+        update_location_cache(normalized_location)
         return all_listings, listings_per_page
 
     except Exception as e:
@@ -534,7 +554,7 @@ def main():
         value="Riyadh",
         help="Enter a location to scrape Airbnb listings."
     )
-
+    normalized_input = normalize_location(search_location)
     # Scrape Listings
     if st.button("Extract Listings"):
         # if not chrome_driver_path.strip() or not search_location.strip():
@@ -544,7 +564,7 @@ def main():
         with st.spinner("Extracting listings..."):
             try:
                 # Check if data is already cached in Streamlit
-                listings, listings_per_page = scrape_listings(search_location)
+                listings, listings_per_page = scrape_listings(normalized_input)
                 
                 # Display Results   
                 total_listings = len(listings)
