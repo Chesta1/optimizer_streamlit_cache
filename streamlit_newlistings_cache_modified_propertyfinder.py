@@ -11,6 +11,9 @@ import math
 from typing import Optional,Tuple
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
+import logging
+import traceback
+import subprocess
 
 def generate_cache_key(country: str, transaction_type: str, location: str, property_type: str) -> str:
     """
@@ -164,6 +167,19 @@ def setup_webdriver():
         # st.write(f"ChromeDriver version: {driver.capabilities.get('chrome', {}).get('chromedriverVersion', 'unknown')}")
         
         return driver
+        
+    except Exception as e:
+        st.error(f"Failed to initialize ChromeDriver: {str(e)}")
+        
+        # Try to read ChromeDriver log
+        try:
+            with open('/tmp/chromedriver.log', 'r') as f:
+                st.code(f.read(), language='text')
+        except:
+            st.warning("Could not read ChromeDriver log")
+            
+        st.code(traceback.format_exc())
+        raise
 
 def country_url(country):
     country_propertyfinder_url = {
