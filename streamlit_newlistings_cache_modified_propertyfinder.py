@@ -10,10 +10,8 @@ import re
 import math
 from typing import Optional,Tuple
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.chrome.options import Options
-import logging
-import traceback
 import subprocess
+from selenium.webdriver.chrome.options import Options
 
 def generate_cache_key(country: str, transaction_type: str, location: str, property_type: str) -> str:
     """
@@ -114,72 +112,68 @@ def cache_search_results(country: str, transaction_type: str, location: str,
 
 
 def setup_webdriver():
-    """Create and return a configured WebDriver instance."""
+    # First check installed versions
     try:
-        # First check installed versions
-        try:
-            # Get Chromium version
-            chrome_version_output = subprocess.check_output(['chromium', '--version']).decode()
-            st.write(f"Installed Chromium: {chrome_version_output.strip()}")
-            
-            # Get ChromeDriver version
-            chromedriver_version_output = subprocess.check_output(['chromedriver', '--version']).decode()
-            st.write(f"Installed ChromeDriver: {chromedriver_version_output.strip()}")
-            
-        except Exception as e:
-            st.warning(f"Version check failed: {str(e)}")
+        # Check Chromium version
+        chrome_version_output = subprocess.check_output(['google-chrome', '--version']).decode()
+        st.write(f"Installed Chromium: {chrome_version_output.strip()}")
         
-        # Initialize Chrome options
-        chrome_options = Options()
-        
-        # Basic required options
-        chrome_options.add_argument("--headless=new")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        
-        # Set binary location
-        chrome_options.binary_location = "/usr/bin/chromium"
-        
-        # Additional options
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument("--disable-web-security")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--remote-debugging-port=9222")
-        
-        # Generic user agent
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/stable Safari/537.36")
-        
-        # Initialize service with logging
-        service = Service(
-            executable_path='/usr/bin/chromedriver',
-            log_path='/tmp/chromedriver.log',
-            service_args=['--verbose']
-        )
-        st.write("Attempting to initialize ChromeDriver...")
-        
-        # Try to create driver
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        
-        # Verify browser capabilities
-        # st.write("Driver capabilities:")
-        # st.write(f"Browser version: {driver.capabilities.get('browserVersion', 'unknown')}")
-        # st.write(f"ChromeDriver version: {driver.capabilities.get('chrome', {}).get('chromedriverVersion', 'unknown')}")
-        
-        return driver
+        # Check ChromeDriver version
+        chromedriver_version_output = subprocess.check_output(['chromedriver', '--version']).decode()
+        st.write(f"Installed ChromeDriver: {chromedriver_version_output.strip()}")
         
     except Exception as e:
-        st.error(f"Failed to initialize ChromeDriver: {str(e)}")
-        
-        # Try to read ChromeDriver log
-        try:
-            with open('/tmp/chromedriver.log', 'r') as f:
-                st.code(f.read(), language='text')
-        except:
-            st.warning("Could not read ChromeDriver log")
-            
-        st.code(traceback.format_exc())
-        raise
+        st.warning(f"Version check failed: {str(e)}")
+
+    # Initialize Chrome options
+    chrome_options = Options()
+    
+    # Hide "Chrome is being controlled..."
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option("useAutomationExtension", False)
+
+    # SSL and bot detection bypass
+    chrome_options.add_argument("--ignore-certificate-errors")
+    chrome_options.add_argument("--allow-running-insecure-content")
+    
+    # Basic required options
+    chrome_options.add_argument("--headless")  # Standard headless mode
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    
+    # Set binary location
+    chrome_options.binary_location = "/usr/bin/google-chrome"
+
+    # Additional options
+    chrome_options.add_argument("--disable-extensions")
+    
+    # Updated User-Agent
+    chrome_options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+    )
+
+    # Initialize service with logging
+    service = Service(
+        executable_path='/usr/bin/chromedriver',
+        log_path='/tmp/chromedriver.log',
+        service_args=['--verbose']
+    )
+
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
+    # Disable webdriver detection
+    driver.execute_script("""
+        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+        window.navigator.chrome = {runtime: {}};
+        Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+        Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
+    """)
+
+    return driver
 
 def country_url(country):
     country_propertyfinder_url = {
@@ -363,7 +357,7 @@ def get_total_pages(driver, final_url: str, items_per_page: int = 26):
         )
         count_text = property_count_element.text
         property_count = int(re.sub(r'[^0-9]', '', count_text))
-        print(f"Found {property_count} properties in search results")
+        # print(f"Found {property_count} properties in search results")
 
         # Calculate total pages
         total_pages = math.ceil(property_count / items_per_page)
@@ -389,10 +383,10 @@ def get_page_urls(driver, final_url: str, total_pages: int, pages_to_scrape: int
         list: List of tuples containing (page_number, page_url)
     """
     try:
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 20)
 
         if total_pages == 0:
-            print("No results found.")
+            # print("No results found.")
             return []
 
         print(f"Pages to scrape: {pages_to_scrape}")
@@ -420,7 +414,7 @@ def get_page_urls(driver, final_url: str, total_pages: int, pages_to_scrape: int
                     if href:
                         page_urls.append((page_num, href))
                         found_pages.add(page_num)
-                        print(f"Found URL for page {page_num}")
+                        # print(f"Found URL for page {page_num}")
 
         # If we need more pages than what's immediately visible
         if pages_to_scrape > len(page_urls):
@@ -454,7 +448,7 @@ def scrape_page_rent(driver, page_number,page_listings,start_serial=1):
     and pulling data from child elements via data-testid or class.
     """
     #print(f"\n--- Scraping Page (Rent) {page_number} ---")
-    wait = WebDriverWait(driver, 20)
+    wait = WebDriverWait(driver, 8)
 
     driver.get(page_listings)
     # All list items with role="listitem"
@@ -556,26 +550,28 @@ def scrape_page_rent(driver, page_number,page_listings,start_serial=1):
 
 
 def new_projects_listings(driver, page_number,page_listings,start_serial=1):
-    wait = WebDriverWait(driver, 20)
+    wait = WebDriverWait(driver, 10)
 
     driver.get(page_listings)
-    time.sleep(5)
+    time.sleep(10)
 
     li_items = wait.until(
-        EC.presence_of_all_elements_located(
-            (By.XPATH, "//a[@data-testid='project-featured-card-link']")
-        )
+    EC.presence_of_all_elements_located(
+        (By.XPATH, "//article[@data-testid='project-featured-card']")
+    )
     )
 
     properties = []
     current_serial = start_serial
     for li in li_items:
+        # print("\n🔹 Processing Project HTML:\n", li.get_attribute("outerHTML"))
         property_data = {}
         # absolute_position = start_serial + idx + 1
         property_data["S.No."]= current_serial
         try:
             # Get off-plan status
             off_plan = li.find_element(By.XPATH, ".//div[@data-testid='tag-off_plan']").text
+            # print(off_plan)
             property_data["off_plan_status"] = off_plan
         except NoSuchElementException:
             property_data["off_plan_status"] = "N/A"
@@ -583,6 +579,7 @@ def new_projects_listings(driver, page_number,page_listings,start_serial=1):
         try:
             # Get delivery date
             delivery_date = li.find_element(By.XPATH, ".//div[@data-testid='tag-delivery_date']").text
+            # print(delivery_date)
             property_data["delivery_date"] = delivery_date
         except NoSuchElementException:
             property_data["delivery_date"] = "N/A"
@@ -601,6 +598,7 @@ def new_projects_listings(driver, page_number,page_listings,start_serial=1):
         # Get title (h3)
         try:
             title = li.find_element(By.XPATH, ".//h3[@class='styles-module_card__title__fCeSh']").text
+            # print(title)
             property_data["title"] = title
         except NoSuchElementException:
             property_data["title"] = "N/A"
@@ -672,7 +670,8 @@ def extract_listings_test(driver, pages_list, search_params):
         df = pd.DataFrame(cache_data['listings_data'])
 
         # Display the cached data
-        st.dataframe(df, hide_index=True, use_container_width=True)
+        # st.dataframe(df, hide_index=True, use_container_width=True)
+        display_with_logos(df)
 
         # Option to refresh data
         if st.button("Refresh Data"):
@@ -695,7 +694,7 @@ def scrape_fresh_data(driver, pages_list, search_params):
     # Progress indicators
     progress_text = st.empty()
     progress_bar = st.progress(0)
-    dataframe_placeholder = st.empty()
+    # dataframe_placeholder = st.empty()
 
     total_pages = len(pages_list)
 
@@ -705,12 +704,12 @@ def scrape_fresh_data(driver, pages_list, search_params):
             progress_text.text(f"Scraping page {page_num} of {total_pages}")
 
             # Scrape new data
-            time.sleep(3)
+            time.sleep(10)
             if search_params['transaction_type'].lower() == "new projects":
-                print("Using new_projects_listings scraper")
+                # print("Using new_projects_listings scraper")
                 new_listings = new_projects_listings(driver, page_num, page_url, start_serial=current_serial)
             else:
-                print("Using standard scrape_page_rent scraper")
+                # print("Using standard scrape_page_rent scraper")
                 new_listings = scrape_page_rent(driver, page_num, page_url, start_serial=current_serial)
 
 
@@ -724,9 +723,13 @@ def scrape_fresh_data(driver, pages_list, search_params):
             progress = (idx + 1) / total_pages
             progress_bar.progress(progress)
 
-            # Update display
-            df = pd.DataFrame(all_listings)
-            dataframe_placeholder.dataframe(df, hide_index=True, use_container_width=True)
+        #     # Update display
+        #     df = pd.DataFrame(all_listings)
+        #     # dataframe_placeholder.dataframe(df, hide_index=True, use_container_width=True)
+        #     # ✅ Ensure 'developer_logo' column only stores raw image URLs
+        #    # ✅ Ensure 'developer_logo' column contains proper HTML image tags
+        #     display_with_logos(df)
+
 
         except Exception as e:
             st.error(f"Error processing page {page_num}: {str(e)}")
@@ -911,16 +914,16 @@ def main():
                 driver.maximize_window()
                 st.write("Successfully navigated to the URL")
                 # Wait for the page to load
-                time.sleep(20)
+                time.sleep(10)
 
                     # Click the transaction type button
                 transaction_selectors = transaction_button_selector_xpath(transaction_type,country=country)
                 if transaction_selectors:
-                    select_transaction_type = WebDriverWait(driver, 20).until(
+                    select_transaction_type = WebDriverWait(driver, 10).until(
                         EC.element_to_be_clickable((By.XPATH, transaction_selectors['xpath']))
                     )
                     driver.execute_script("arguments[0].click();", select_transaction_type)
-                    st.write(f"Successfully clicked the {transaction_type} button")
+                    # st.write(f"Successfully clicked the {transaction_type} button")
                     time.sleep(5)
 
                 # Location search
@@ -943,7 +946,7 @@ def main():
                 )
                 time.sleep(10)
                 suggestion.click()
-                st.write(f"Successfully entered and selected location: {location}")
+                # st.write(f"Successfully entered and selected location: {location}")
                 time.sleep(3)
 
                 # Property type selection
@@ -966,18 +969,18 @@ def main():
                             By.XPATH, f".//button[@class='styles-module_dropdown-content__item__thioe' and text()='{property_type}']"
                         )
                         driver.execute_script("arguments[0].scrollIntoView(true);", property_option)
-                        time.sleep(5)  # Wait for scroll to complete
+                        time.sleep(3)  # Wait for scroll to complete
 
                         # Click using JavaScript
                         driver.execute_script("arguments[0].click();", property_option)
-                        st.write(f"Successfully selected property type: {property_type}")
+                        # st.write(f"Successfully selected property type: {property_type}")
                         time.sleep(3)
                     except Exception as e:
                         st.write(f"Property type selection failed: {e}")
 
                 # Click on the search button
-                time.sleep(10)
-                wait = WebDriverWait(driver, 20)
+                time.sleep(5)
+                wait = WebDriverWait(driver, 8)
                 search_button = wait.until(
                     EC.element_to_be_clickable(
                         (By.XPATH, "//button[@data-testid='home-page-filters-search']")
@@ -986,9 +989,9 @@ def main():
 
                 # Scroll the button into view
                 driver.execute_script("arguments[0].scrollIntoView(true);", search_button)
-                time.sleep(10)  # Give some time for the scroll to complete
+                time.sleep(5)  # Give some time for the scroll to complete
                 search_button.click()
-                st.write("Clicked the search button")
+                # st.write("Clicked the search button")
 
                 # Wait for URL change
                 time.sleep(3)
