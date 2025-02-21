@@ -12,6 +12,7 @@ from typing import Optional,Tuple
 from selenium.common.exceptions import NoSuchElementException
 import subprocess
 from selenium.webdriver.chrome.options import Options
+import shutil
 
 def generate_cache_key(country: str, transaction_type: str, location: str, property_type: str) -> str:
     """
@@ -112,60 +113,71 @@ def cache_search_results(country: str, transaction_type: str, location: str,
 
 
 def setup_webdriver():
-    # First check installed versions
-    try:
-        # Check Chromium version
-        chrome_version_output = subprocess.check_output(['google-chrome', '--version']).decode()
-        #st.write(f"Installed Chromium: {chrome_version_output.strip()}")
-        
-        # Check ChromeDriver version
-        chromedriver_version_output = subprocess.check_output(['chromedriver', '--version']).decode()
-        #st.write(f"Installed ChromeDriver: {chromedriver_version_output.strip()}")
-        
-    except Exception as e:
-        st.warning(f"Version check failed: {str(e)}")
+    """
+    Initializes and returns a configured Selenium WebDriver instance.
+    """
 
-    # Initialize Chrome options
+    # ✅ Check if Chrome and ChromeDriver exist dynamically
+    chrome_binary = shutil.which("google-chrome") or shutil.which("chromium")
+    chromedriver_binary = shutil.which("chromedriver")
+
+    if not chrome_binary:
+        raise FileNotFoundError("Google Chrome or Chromium is not installed or not in PATH.")
+
+    if not chromedriver_binary:
+        raise FileNotFoundError("ChromeDriver is not installed or not in PATH.")
+
+    # ✅ Get Chrome & ChromeDriver Versions
+    try:
+        chrome_version_output = subprocess.check_output([chrome_binary, "--version"]).decode()
+        # print(f"✔ Installed Chrome: {chrome_version_output.strip()}")
+
+        chromedriver_version_output = subprocess.check_output([chromedriver_binary, "--version"]).decode()
+        # print(f"✔ Installed ChromeDriver: {chromedriver_version_output.strip()}")
+
+    except Exception as e:
+        st.write(f"⚠ Version check failed: {str(e)}")
+
+    # ✅ Initialize Chrome options
     chrome_options = Options()
-    
-    # Hide "Chrome is being controlled..."
+
+    # 🚀 Hide "Chrome is being controlled by automated test software" banner
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option("useAutomationExtension", False)
 
-    # SSL and bot detection bypass
+    # ✅ SSL and bot detection bypass
     chrome_options.add_argument("--ignore-certificate-errors")
     chrome_options.add_argument("--allow-running-insecure-content")
-    
-    # Basic required options
-    chrome_options.add_argument("--headless")  # Standard headless mode
+
+    # ✅ Basic required options
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--remote-debugging-port=9222")
-    
-    # Set binary location
-    chrome_options.binary_location = "/usr/bin/google-chrome"
 
-    # Additional options
+    # ✅ Use standard headless mode (works across versions)
+    chrome_options.add_argument("--headless")
+
+    # ✅ Set Chrome binary dynamically
+    chrome_options.binary_location = chrome_binary
+
+    # ✅ Disable extensions (Optional: Can be removed if extensions are needed)
     chrome_options.add_argument("--disable-extensions")
-    
-    # Updated User-Agent
+
+    # ✅ Updated User-Agent (Chrome 119)
     chrome_options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
     )
 
-    # Initialize service with logging
-    service = Service(
-        executable_path='/usr/bin/chromedriver',
-        log_path='/tmp/chromedriver.log',
-        service_args=['--verbose']
-    )
+    # ✅ Initialize WebDriver service without hardcoded path
+    service = Service(executable_path=chromedriver_binary)
 
+    # 🚀 Create WebDriver instance
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    
-    # Disable webdriver detection
+
+    # ✅ Disable WebDriver detection (Bypass bot checks)
     driver.execute_script("""
         Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
         window.navigator.chrome = {runtime: {}};
