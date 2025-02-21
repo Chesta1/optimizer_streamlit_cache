@@ -116,11 +116,11 @@ def setup_webdriver():
     try:
         # Check Chromium version
         chrome_version_output = subprocess.check_output(['google-chrome', '--version']).decode()
-        st.write(f"Installed Chromium: {chrome_version_output.strip()}")
+        #st.write(f"Installed Chromium: {chrome_version_output.strip()}")
         
         # Check ChromeDriver version
         chromedriver_version_output = subprocess.check_output(['chromedriver', '--version']).decode()
-        st.write(f"Installed ChromeDriver: {chromedriver_version_output.strip()}")
+        #st.write(f"Installed ChromeDriver: {chromedriver_version_output.strip()}")
         
     except Exception as e:
         st.warning(f"Version check failed: {str(e)}")
