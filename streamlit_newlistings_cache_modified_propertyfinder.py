@@ -13,6 +13,7 @@ from selenium.common.exceptions import NoSuchElementException
 import subprocess
 from selenium.webdriver.chrome.options import Options
 import shutil
+import traceback
 
 def generate_cache_key(country: str, transaction_type: str, location: str, property_type: str) -> str:
     """
@@ -113,79 +114,72 @@ def cache_search_results(country: str, transaction_type: str, location: str,
 
 
 def setup_webdriver():
-    """
-    Initializes and returns a configured Selenium WebDriver instance.
-    """
-
-    # ✅ Check if Chrome and ChromeDriver exist dynamically
-    chrome_binary = shutil.which("google-chrome") or shutil.which("chromium")
-    chromedriver_binary = shutil.which("chromedriver")
-
-    if not chrome_binary:
-        raise FileNotFoundError("Google Chrome or Chromium is not installed or not in PATH.")
-
-    if not chromedriver_binary:
-        raise FileNotFoundError("ChromeDriver is not installed or not in PATH.")
-
-    # ✅ Get Chrome & ChromeDriver Versions
+    """Create and return a configured WebDriver instance."""
     try:
-        chrome_version_output = subprocess.check_output([chrome_binary, "--version"]).decode()
-        # print(f"✔ Installed Chrome: {chrome_version_output.strip()}")
-
-        chromedriver_version_output = subprocess.check_output([chromedriver_binary, "--version"]).decode()
-        # print(f"✔ Installed ChromeDriver: {chromedriver_version_output.strip()}")
-
+        # First check installed versions
+        try:
+            # Get Chromium version
+            chrome_version_output = subprocess.check_output(['chromium', '--version']).decode()
+            # st.write(f"Installed Chromium: {chrome_version_output.strip()}")
+            
+            # Get ChromeDriver version
+            chromedriver_version_output = subprocess.check_output(['chromedriver', '--version']).decode()
+            # st.write(f"Installed ChromeDriver: {chromedriver_version_output.strip()}")
+            
+        except Exception as e:
+            st.warning(f"Version check failed: {str(e)}")
+        
+        # Initialize Chrome options
+        chrome_options = Options()
+        
+        # Basic required options
+        chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        
+        # Set binary location
+        chrome_options.binary_location = "/usr/bin/chromium"
+        
+        # Additional options
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-web-security")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--remote-debugging-port=9222")
+        
+        # Generic user agent
+        chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/stable Safari/537.36")
+        
+        # Initialize service with logging
+        service = Service(
+            executable_path='/usr/bin/chromedriver',
+            log_path='/tmp/chromedriver.log',
+            service_args=['--verbose']
+        )
+        # st.write("Attempting to initialize ChromeDriver...")
+        
+        # Try to create driver
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+        # Verify browser capabilities
+        # st.write("Driver capabilities:")
+        # st.write(f"Browser version: {driver.capabilities.get('browserVersion', 'unknown')}")
+        # st.write(f"ChromeDriver version: {driver.capabilities.get('chrome', {}).get('chromedriverVersion', 'unknown')}")
+        
+        return driver
+        
     except Exception as e:
-        st.write(f"⚠ Version check failed: {str(e)}")
-
-    # ✅ Initialize Chrome options
-    chrome_options = Options()
-
-    # 🚀 Hide "Chrome is being controlled by automated test software" banner
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("useAutomationExtension", False)
-
-    # ✅ SSL and bot detection bypass
-    chrome_options.add_argument("--ignore-certificate-errors")
-    chrome_options.add_argument("--allow-running-insecure-content")
-
-    # ✅ Basic required options
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument("--remote-debugging-port=9222")
-
-    # ✅ Use standard headless mode (works across versions)
-    chrome_options.add_argument("--headless")
-
-    # ✅ Set Chrome binary dynamically
-    chrome_options.binary_location = chrome_binary
-
-    # ✅ Disable extensions (Optional: Can be removed if extensions are needed)
-    chrome_options.add_argument("--disable-extensions")
-
-    # ✅ Updated User-Agent (Chrome 119)
-    chrome_options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-    )
-
-    # ✅ Initialize WebDriver service without hardcoded path
-    service = Service(executable_path=chromedriver_binary)
-
-    # 🚀 Create WebDriver instance
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-
-    # ✅ Disable WebDriver detection (Bypass bot checks)
-    driver.execute_script("""
-        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-        window.navigator.chrome = {runtime: {}};
-        Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
-        Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
-    """)
-
-    return driver
+        st.error(f"Failed to initialize ChromeDriver: {str(e)}")
+        
+        # Try to read ChromeDriver log
+        try:
+            with open('/tmp/chromedriver.log', 'r') as f:
+                st.code(f.read(), language='text')
+        except:
+            st.warning("Could not read ChromeDriver log")
+            
+        st.code(traceback.format_exc())
+        raise
 
 def country_url(country):
     country_propertyfinder_url = {
