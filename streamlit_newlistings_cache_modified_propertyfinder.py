@@ -63,7 +63,7 @@ def get_cached_results(country: str, transaction_type: str, location: str, prope
             cached_data['listings_data']):
 
             cache_age = pd.Timestamp.now() - cached_data['timestamp']
-            if cache_age.total_seconds() <= 3600:  # 1 hour TTL
+            if cache_age.total_seconds() <= 3600 *24:  # 1 hour TTL
                 return True, cached_data
 
         return False, None
