@@ -1058,28 +1058,54 @@ def main():
                         return
 
                     # Convert to DataFrame and display
-                    df = pd.DataFrame(all_listings)
-                    df = df.reset_index(drop=True)
+                    #df = pd.DataFrame(all_listings)
+                    #df = df.reset_index(drop=True)
+                     
                      # ✅ Use the custom display function to render images properly
-                    display_with_logos(df)
-                    # st.dataframe(df ,hide_index=True, use_container_width=True)
-                    # st.dataframe(
-                    # df,
-                    # column_config={
-                    #     "developer_logo": st.column_config.ImageColumn("Developer Logo", width=100)
-                    # },
-                    # hide_index=True,
-                    # use_container_width=True
-                    # )
+                    
+                    #display_with_logos(df)
+                    
+                    #---- st.dataframe(df ,hide_index=True, use_container_width=True)
+                    # ---st.dataframe(
+                    # ---df,
+                    #--- column_config={
+                    #  ---   "developer_logo": st.column_config.ImageColumn("Developer Logo", width=100)
+                    #-- },
+                    # ---hide_index=True,
+                    # ---use_container_width=True
+                    # --)
 
                     # Option to download as CSV
-                    csv = df.to_csv(index=False)
-                    st.download_button(
-                        label="Download data as CSV",
-                        data=csv,
-                        file_name="property_listings.csv",
-                        mime="text/csv",
-                    )
+                    # csv = df.to_csv(index=False)
+                    # st.download_button(
+                    #     label="Download data as CSV",
+                    #     data=csv,
+                    #     file_name="property_listings.csv",
+                    #     mime="text/csv",
+                    # )
+
+                    # Convert to DataFrame and reset the index
+                    df = pd.DataFrame(all_listings).reset_index(drop=True)
+
+                    # Create two columns for a "toolbar" effect
+                    col1, col2 = st.columns([3, 1])
+
+                    with col1:
+                        st.markdown("## Results Table")  # or "###"
+                        
+                    with col2:
+                        # Prepare CSV data
+                        csv = df.to_csv(index=False)
+                        st.download_button(
+                            label="Download data as CSV",
+                            data=csv,
+                            file_name="property_listings.csv",
+                            mime="text/csv",
+                        )
+
+                    # Now render the table below your "toolbar"
+                    display_with_logos(df)
+
 
                 except Exception as e:
                     st.write(f"An error occurred during scraping: {e}")
