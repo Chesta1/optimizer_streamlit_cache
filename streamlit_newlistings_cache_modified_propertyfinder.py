@@ -14,6 +14,8 @@ import subprocess
 from selenium.webdriver.chrome.options import Options
 import shutil
 import traceback
+import urllib.parse
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
 def generate_cache_key(country: str, transaction_type: str, location: str, property_type: str) -> str:
     """
@@ -111,6 +113,75 @@ def cache_search_results(country: str, transaction_type: str, location: str,
     except Exception as e:
         st.error(f"Error caching results: {str(e)}")
         return None
+
+
+# def setup_webdriver():
+#     """Create and return a configured WebDriver instance."""
+#     try:
+#         # First check installed versions
+#         try:
+#             # Get Chromium version
+#             chrome_version_output = subprocess.check_output(['chromium', '--version']).decode()
+#             # st.write(f"Installed Chromium: {chrome_version_output.strip()}")
+            
+#             # Get ChromeDriver version
+#             chromedriver_version_output = subprocess.check_output(['chromedriver', '--version']).decode()
+#             # st.write(f"Installed ChromeDriver: {chromedriver_version_output.strip()}")
+            
+#         except Exception as e:
+#             st.warning(f"Version check failed: {str(e)}")
+        
+#         # Initialize Chrome options
+#         chrome_options = Options()
+        
+#         # Basic required options
+#         chrome_options.add_argument("--headless=new")
+#         chrome_options.add_argument("--no-sandbox")
+#         chrome_options.add_argument("--disable-dev-shm-usage")
+#         chrome_options.add_argument("--disable-gpu")
+        
+#         # Set binary location
+#         chrome_options.binary_location = "/usr/bin/chromium"
+        
+#         # Additional options
+#         chrome_options.add_argument("--disable-extensions")
+#         chrome_options.add_argument("--disable-web-security")
+#         chrome_options.add_argument("--window-size=1920,1080")
+#         chrome_options.add_argument("--remote-debugging-port=9222")
+        
+#         # Generic user agent
+#         chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/stable Safari/537.36")
+        
+#         # Initialize service with logging
+#         service = Service(
+#             executable_path='/usr/bin/chromedriver',
+#             log_path='/tmp/chromedriver.log',
+#             service_args=['--verbose']
+#         )
+#         # st.write("Attempting to initialize ChromeDriver...")
+        
+#         # Try to create driver
+#         driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+#         # Verify browser capabilities
+#         # st.write("Driver capabilities:")
+#         # st.write(f"Browser version: {driver.capabilities.get('browserVersion', 'unknown')}")
+#         # st.write(f"ChromeDriver version: {driver.capabilities.get('chrome', {}).get('chromedriverVersion', 'unknown')}")
+        
+#         return driver
+        
+#     except Exception as e:
+#         st.error(f"Failed to initialize ChromeDriver: {str(e)}")
+        
+#         # Try to read ChromeDriver log
+#         try:
+#             with open('/tmp/chromedriver.log', 'r') as f:
+#                 st.code(f.read(), language='text')
+#         except:
+#             st.warning("Could not read ChromeDriver log")
+            
+#         st.code(traceback.format_exc())
+#         raise
 
 
 def setup_webdriver():
@@ -655,6 +726,9 @@ def new_projects_listings(driver, page_number,page_listings,start_serial=1):
 # def cache_listings(listings):
 #     return listings
 
+
+
+
 # Modified extract_listings_test function
 def extract_listings_test(driver, pages_list, search_params):
     """
@@ -785,6 +859,217 @@ def get_transaction_types(country):
     return base_types
 
 
+# def get_furnished_filter_value(furnished_option):
+#     """Return the appropriate furnished filter value based on selection."""
+#     furnished_map = {
+#         "All furnishings":"0",
+#         "Furnished":"1",
+#         "Unfurnished":"2",
+#         "Partly furnished":"3"
+#     }
+
+#     return furnished_map.get(furnished_option,"0")
+
+
+
+# def apply_url_filters(base_url, filters):
+#     """
+#     Apply filters directly to the URL instead of using UI interactions.
+    
+#     Args:
+#         base_url (str): The base search URL obtained after initial search
+#         filters (dict): Dictionary of filter parameters to apply
+        
+#     Returns:
+#         str: Modified URL with filter parameters
+#     """
+#     # Parse the existing URL
+#     url_parts = list(urllib.parse.urlparse(base_url))
+#     # # Before: ['https', 'www.propertyfinder.ae', '/en/search', '', 'c=1&t=1&l=36', '']
+
+#     # Extract query parameters as dictionary
+#     query = dict(urllib.parse.parse_qsl(url_parts[4]))
+#     # {'c': '1', 't': '1', 'l': '36'}
+    
+#     # Add filter parameters
+#     query.update(filters)
+#      # {'c': '1', 't': '1', 'l': '36', 'fu': '2'}
+
+
+#     # Convert back to query string
+#     url_parts[4] = urllib.parse.urlencode(query)
+#     # url_parts[4] = 'c=1&t=1&l=36&fu=2'
+
+#     # Reassemble the URL
+#     return urllib.parse.urlunparse(url_parts)
+#      # 'https://www.propertyfinder.ae/en/search?c=1&t=1&l=36&fu=2'
+
+
+
+def apply_property_filters(base_url, filters):
+    """
+    Apply property filters to a PropertyFinder URL, handling both regular and array parameters.
+    
+    Args:
+        base_url (str): The base URL from initial search
+        filters (dict): Dictionary of filters to apply
+        
+    Returns:
+        str: Modified URL with filters applied
+    """
+    # Parse the URL
+    parsed_url = urlparse(base_url)
+    
+    # Get existing parameters as dict
+    query_params = dict(parse_qsl(parsed_url.query))
+    
+    # Update/add filter parameters
+    for key, value in filters.items():
+        if value is not None and value != "":
+            query_params[key] = value
+    
+    # Rebuild the URL
+    url_parts = list(parsed_url)
+    url_parts[4] = urlencode(query_params)
+    
+    return urlunparse(url_parts)
+
+# Constants for filter options
+FILTER_OPTIONS = {
+    # Furnishing options
+    "furnishing": {
+        "parameter": "fu",
+        "options": {
+            "All furnishings": "0",
+            "Furnished": "1", 
+            "Unfurnished": "2",
+            "Partly furnished": "3"
+        }
+    },
+    
+    # Bedroom options
+    "bedrooms": {
+        "parameter": "bdr[]",
+        "options": {
+            "Any": "",
+            "Studio": "0",
+            "1 Bedroom": "1",
+            "2 Bedrooms": "2",
+            "3 Bedrooms": "3", 
+            "4 Bedrooms": "4",
+            "5 Bedrooms": "5",
+            "6 Bedrooms": "6",
+            "7 Bedrooms": "7",
+            "7+ Bedrooms": "8"
+        }
+    },
+    
+    # Bathroom options
+    "bathrooms": {
+        "parameter": "btr[]", 
+        "options": {
+            "Any": "",
+            "1 Bathroom": "1",
+            "2 Bathrooms": "2",
+            "3 Bathrooms": "3",
+            "4 Bathrooms": "4",
+            "5 Bathrooms": "5",
+            "6 Bathrooms": "6",
+            "7 Bathrooms": "7",
+            "7+ Bathrooms": "8"
+        }
+    },
+    
+    # Sort options
+    "sort": {
+        "parameter": "ob",
+        "options": {
+            "Featured": "mr",
+            "Newest": "nd",
+            "Price (low)": "pa",
+            "Price (high)": "pd",
+            "Beds (least)": "ba",
+            "Beds (most)": "bd"
+        }
+    }
+}
+
+
+
+# Add this to your main function after initial search completes
+def display_property_filters():
+    """
+    Display property filter UI in Streamlit and return selected filters.
+    
+    Returns:
+        dict: Selected filter parameters ready for URL application
+    """
+    st.subheader("Property Filters")
+    
+    # Create two columns for layout
+    col1, col2 = st.columns(2)
+    
+    selected_filters = {}
+    
+    # First column: Furnishing & Bedrooms
+    with col1:
+        # Furnishing status
+        furnishing = st.selectbox(
+            "Furnishing Status",
+            list(FILTER_OPTIONS["furnishing"]["options"].keys()),
+            index=0
+        )
+        
+        # Only add if not "Any"
+        furnishing_value = FILTER_OPTIONS["furnishing"]["options"][furnishing]
+        if furnishing_value:
+            selected_filters[FILTER_OPTIONS["furnishing"]["parameter"]] = furnishing_value
+        
+        # Bedrooms
+        bedrooms = st.selectbox(
+            "Bedrooms",
+            list(FILTER_OPTIONS["bedrooms"]["options"].keys()),
+            index=0
+        )
+        
+        # Only add if not "Any"
+        bedroom_value = FILTER_OPTIONS["bedrooms"]["options"][bedrooms]
+        if bedroom_value:
+            selected_filters[FILTER_OPTIONS["bedrooms"]["parameter"]] = bedroom_value
+    
+    # Second column: Bathrooms & Sort
+    with col2:
+        # Bathrooms
+        bathrooms = st.selectbox(
+            "Bathrooms",
+            list(FILTER_OPTIONS["bathrooms"]["options"].keys()),
+            index=0
+        )
+        
+        # Only add if not "Any"
+        bathroom_value = FILTER_OPTIONS["bathrooms"]["options"][bathrooms]
+        if bathroom_value:
+            selected_filters[FILTER_OPTIONS["bathrooms"]["parameter"]] = bathroom_value
+        
+        # Sort
+        sort_option = st.selectbox(
+            "Sort By",
+            list(FILTER_OPTIONS["sort"]["options"].keys()),
+            index=0
+        )
+        
+        # Add sort parameter
+        sort_value = FILTER_OPTIONS["sort"]["options"][sort_option]
+        if sort_value:
+            selected_filters[FILTER_OPTIONS["sort"]["parameter"]] = sort_value
+    
+    return selected_filters
+
+
+
+
+     
+
 def main():
     st.title("Property Finder Scraper")
     # Add cache control in sidebar
@@ -827,14 +1112,15 @@ def main():
                         - Last Updated: {cache_data['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}
                         """)
                         st.divider()
-    # User inputs
+                        
+    # SECTION 1: BASIC SEARCH PARAMETERS
+    st.subheader("Search Parameters")
     country = st.selectbox("Select Country", ["UAE", "Bahrain", "Qatar", "Egypt", "Kingdom-of-Saudi Arabia"])
 
     # Get available transaction types based on country
     available_transaction_types = get_transaction_types(country)
     transaction_type = st.selectbox("Select Transaction Type", available_transaction_types)
 
-    # transaction_type = st.selectbox("Select Transaction Type", ["Rent", "Buy", "New Projects", "Commercial"])
     location = st.text_input("Enter City, community or building")
     # Get property types directly using user's selections
     property_types = get_property_types(country, transaction_type)
@@ -844,6 +1130,11 @@ def main():
         return
 
     property_type = st.selectbox("Select Property Type", property_types)
+    
+    # SECTION 2: ADVANCED FILTERS (MOVED BEFORE SEARCH BUTTON)
+    # Use the existing display_property_filters function
+    selected_filters = display_property_filters()
+        
     # Store search parameters
     search_params = {
         'country': country,
@@ -864,7 +1155,7 @@ def main():
             search_params['location'],
             search_params['property_type']
         )
-        if has_cache  and not st.session_state.get('refresh_data', False):
+        if has_cache and not st.session_state.get('refresh_data', False):
             st.success(f"""
                 Found existing data for this search combination:
                 - Last updated: {cache_data['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}
@@ -892,6 +1183,7 @@ def main():
         # Reset refresh_data flag
         if st.session_state.get('refresh_data'):
             del st.session_state['refresh_data']
+            
     # Create a session state to store the driver and other values
     if 'driver' not in st.session_state:
         st.session_state.driver = None
@@ -899,9 +1191,22 @@ def main():
         st.session_state.total_pages = 0
     if 'final_url' not in st.session_state:
         st.session_state.final_url = None
+    if 'base_url' not in st.session_state:
+        st.session_state.base_url = None
+    if 'search_url' not in st.session_state:
+        st.session_state.search_url = None
+        
+    # URL Debugging Panel
+    if 'base_url' in st.session_state and st.session_state.base_url:
+        with st.expander("Debug URLs", expanded=False):
+            st.write("**Base URL:** ", st.session_state.base_url)
+            if 'search_url' in st.session_state and st.session_state.search_url:
+                st.write("**Search URL:** ", st.session_state.search_url)
+            if 'final_url' in st.session_state and st.session_state.final_url:
+                st.write("**Final URL (with filters):** ", st.session_state.final_url)
+        
     # Search button - only show if no cache or refresh requested
     if not has_cache or getattr(st.session_state, 'refresh_data', False):
-
         # Initial search button
         if st.button("Search Properties"):
             try:
@@ -913,7 +1218,8 @@ def main():
 
                 # Get URL based on country selection
                 base_url = country_url(country)
-                st.write(f"Selected URL: {base_url}")
+                st.session_state.base_url = base_url
+                st.write(f"Base URL: {base_url}")
 
                 # Navigate to the URL
                 driver.get(base_url)
@@ -922,14 +1228,13 @@ def main():
                 # Wait for the page to load
                 time.sleep(10)
 
-                    # Click the transaction type button
-                transaction_selectors = transaction_button_selector_xpath(transaction_type,country=country)
+                # Click the transaction type button
+                transaction_selectors = transaction_button_selector_xpath(transaction_type, country=country)
                 if transaction_selectors:
                     select_transaction_type = WebDriverWait(driver, 10).until(
                         EC.element_to_be_clickable((By.XPATH, transaction_selectors['xpath']))
                     )
                     driver.execute_script("arguments[0].click();", select_transaction_type)
-                    # st.write(f"Successfully clicked the {transaction_type} button")
                     time.sleep(5)
 
                 # Location search
@@ -952,7 +1257,6 @@ def main():
                 )
                 time.sleep(10)
                 suggestion.click()
-                # st.write(f"Successfully entered and selected location: {location}")
                 time.sleep(3)
 
                 # Property type selection
@@ -968,8 +1272,6 @@ def main():
                         dropdown_content = WebDriverWait(driver, 10).until(
                             EC.presence_of_element_located((By.XPATH, "//div[@data-testid='dropdown-content']"))
                         )
-                        # driver.execute_script("arguments[0].scrollIntoView(true);", property_option)## added on 3-2-2025
-                        # time.sleep(5)## added on 3-2-2025
                         # Find the specific property type option
                         property_option = dropdown_content.find_element(
                             By.XPATH, f".//button[@class='styles-module_dropdown-content__item__thioe' and text()='{property_type}']"
@@ -979,7 +1281,6 @@ def main():
 
                         # Click using JavaScript
                         driver.execute_script("arguments[0].click();", property_option)
-                        # st.write(f"Successfully selected property type: {property_type}")
                         time.sleep(3)
                     except Exception as e:
                         st.write(f"Property type selection failed: {e}")
@@ -997,13 +1298,30 @@ def main():
                 driver.execute_script("arguments[0].scrollIntoView(true);", search_button)
                 time.sleep(5)  # Give some time for the scroll to complete
                 search_button.click()
-                # st.write("Clicked the search button")
 
                 # Wait for URL change
                 time.sleep(3)
 
-                st.session_state.final_url = driver.current_url
-                st.write(f"Final URL: {st.session_state.final_url}")
+                # Store the basic search URL
+                st.session_state.search_url = driver.current_url
+                st.write(f"Basic search URL: {st.session_state.search_url}")
+
+                # Apply filters directly without requiring a second button click
+                if selected_filters:
+                    filtered_url = apply_property_filters(st.session_state.search_url, selected_filters)
+                    st.write(f"Applying filters automatically to URL...")
+                    
+                    # Navigate to the filtered URL
+                    driver.get(filtered_url)
+                    time.sleep(3)  # Wait for page to load with filters
+                    
+                    # Store the final URL (with filters applied)
+                    st.session_state.final_url = filtered_url
+                    st.write(f"Final URL with filters: {st.session_state.final_url}")
+                else:
+                    # If no filters were applied, the search URL is the final URL
+                    st.session_state.final_url = st.session_state.search_url
+                    st.write("No filters applied. Using search URL as final.")
 
                 # Get total pages available
                 total_pages, property_count = get_total_pages(driver, st.session_state.final_url)
@@ -1018,6 +1336,7 @@ def main():
 
             except Exception as e:
                 st.write(f"An error occurred during search: {e}")
+                st.code(traceback.format_exc())  # Added for better debugging
                 if st.session_state.driver:
                     st.session_state.driver.quit()
                     st.session_state.driver = None
@@ -1051,38 +1370,11 @@ def main():
                         return
 
                     # Scrape listings
-                    all_listings = extract_listings_test(st.session_state.driver, page_urls,search_params)
+                    all_listings = extract_listings_test(st.session_state.driver, page_urls, search_params)
 
                     if not all_listings:
                         st.write("No listings found. Please check your search criteria.")
                         return
-
-                    # Convert to DataFrame and display
-                    #df = pd.DataFrame(all_listings)
-                    #df = df.reset_index(drop=True)
-                     
-                     # ✅ Use the custom display function to render images properly
-                    
-                    #display_with_logos(df)
-                    
-                    #---- st.dataframe(df ,hide_index=True, use_container_width=True)
-                    # ---st.dataframe(
-                    # ---df,
-                    #--- column_config={
-                    #  ---   "developer_logo": st.column_config.ImageColumn("Developer Logo", width=100)
-                    #-- },
-                    # ---hide_index=True,
-                    # ---use_container_width=True
-                    # --)
-
-                    # Option to download as CSV
-                    # csv = df.to_csv(index=False)
-                    # st.download_button(
-                    #     label="Download data as CSV",
-                    #     data=csv,
-                    #     file_name="property_listings.csv",
-                    #     mime="text/csv",
-                    # )
 
                     # Convert to DataFrame and reset the index
                     df = pd.DataFrame(all_listings).reset_index(drop=True)
@@ -1106,9 +1398,9 @@ def main():
                     # Now render the table below your "toolbar"
                     display_with_logos(df)
 
-
                 except Exception as e:
                     st.write(f"An error occurred during scraping: {e}")
+                    st.code(traceback.format_exc())  # Added for better debugging
                 finally:
                     # Only quit the driver after scraping is complete
                     if st.session_state.driver:
@@ -1116,6 +1408,8 @@ def main():
                         st.session_state.driver = None
                         st.session_state.total_pages = 0
                         st.session_state.final_url = None
+                        st.session_state.base_url = None
+                        st.session_state.search_url = None
 
 if __name__ == "__main__":
     main()
