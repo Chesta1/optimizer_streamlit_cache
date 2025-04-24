@@ -934,9 +934,33 @@ def get_transaction_types(country):
     
 #     return urlunparse(url_parts)
 
+# def apply_property_filters(search_url, filters):
+#     """
+#     Apply property filters to search URL
+    
+#     Args:
+#         search_url (str): Original search URL
+#         filters (dict): Selected filter parameters
+        
+#     Returns:
+#         str: Updated URL with filters applied
+#     """
+#     # Start with the original search URL
+#     filtered_url = search_url
+    
+#     # Add each filter parameter
+#     for param, value in filters.items():
+#         # Check if URL already has parameters
+#         if '?' in filtered_url:
+#             filtered_url += f"&{param}={value}"
+#         else:
+#             filtered_url += f"?{param}={value}"
+    
+#     return filtered_url
+
 def apply_property_filters(search_url, filters):
     """
-    Apply property filters to search URL
+    Apply property filters to search URL with support for multiple selection parameters
     
     Args:
         search_url (str): Original search URL
@@ -948,13 +972,24 @@ def apply_property_filters(search_url, filters):
     # Start with the original search URL
     filtered_url = search_url
     
-    # Add each filter parameter
+    # Check if URL already has parameters
+    has_params = '?' in filtered_url
+    
+    # Handle special case for bedrooms multiple selection
+    if "bedroom_values" in filters:
+        bedroom_values = filters.pop("bedroom_values")  # Remove from regular filters
+        bedroom_param = FILTER_OPTIONS["bedrooms"]["parameter"]
+        
+        for value in bedroom_values:
+            separator = "&" if (has_params or filtered_url.count("?") > 0) else "?"
+            filtered_url += f"{separator}{bedroom_param}={value}"
+            has_params = True  # After adding first parameter, use & for the rest
+    
+    # Add each regular filter parameter
     for param, value in filters.items():
-        # Check if URL already has parameters
-        if '?' in filtered_url:
-            filtered_url += f"&{param}={value}"
-        else:
-            filtered_url += f"?{param}={value}"
+        separator = "&" if (has_params or filtered_url.count("?") > 0) else "?"
+        filtered_url += f"{separator}{param}={value}"
+        has_params = True
     
     return filtered_url
 
@@ -995,7 +1030,8 @@ FILTER_OPTIONS = {
             "6 Bedrooms": "6",
             "7 Bedrooms": "7",
             "7+ Bedrooms": "8"
-        }
+        },
+        "multiple": True  # Flag to indicate multiple selection
     },
     
     # Bathroom options
@@ -1066,17 +1102,36 @@ def display_property_filters():
         if furnishing_value:
             selected_filters[FILTER_OPTIONS["furnishing"]["parameter"]] = furnishing_value
         
-        # Bedrooms
-        bedrooms = st.selectbox(
-            "Bedrooms",
-            list(FILTER_OPTIONS["bedrooms"]["options"].keys()),
-            index=0
-        )
+        # # Bedrooms
+        # bedrooms = st.selectbox(
+        #     "Bedrooms",
+        #     list(FILTER_OPTIONS["bedrooms"]["options"].keys()),
+        #     index=0
+        # )
         
-        # Only add if not "Any"
-        bedroom_value = FILTER_OPTIONS["bedrooms"]["options"][bedrooms]
-        if bedroom_value:
-            selected_filters[FILTER_OPTIONS["bedrooms"]["parameter"]] = bedroom_value
+        # # Only add if not "Any"
+        # bedroom_value = FILTER_OPTIONS["bedrooms"]["options"][bedrooms]
+        # if bedroom_value:
+        #     selected_filters[FILTER_OPTIONS["bedrooms"]["parameter"]] = bedroom_value
+
+        # Modified: Multi-select bedrooms
+
+        # Modified: Multi-select bedrooms
+        bedroom_options = list(FILTER_OPTIONS["bedrooms"]["options"].keys())
+        bedroom_options.remove("Any")  # Remove "Any" from multiselect
+        
+        selected_bedrooms = st.multiselect(
+        "Bedrooms (Select multiple)",
+        options=bedroom_options,
+        default=[]
+        )
+
+        # Add selected bedrooms to filters
+        if selected_bedrooms:
+            # For multiple selection parameters, we'll handle them differently in apply_property_filters
+            bedroom_values = [FILTER_OPTIONS["bedrooms"]["options"][br] for br in selected_bedrooms]
+            selected_filters["bedroom_values"] = bedroom_values  # Store as special key
+        
         
         # Added Listed Within filter
         listed_within = st.selectbox(
