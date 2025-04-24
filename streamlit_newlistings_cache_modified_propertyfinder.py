@@ -906,33 +906,67 @@ def get_transaction_types(country):
 
 
 
-def apply_property_filters(base_url, filters):
+# def apply_property_filters(base_url, filters):
+#     """
+#     Apply property filters to a PropertyFinder URL, handling both regular and array parameters.
+    
+#     Args:
+#         base_url (str): The base URL from initial search
+#         filters (dict): Dictionary of filters to apply
+        
+#     Returns:
+#         str: Modified URL with filters applied
+#     """
+#     # Parse the URL
+#     parsed_url = urlparse(base_url)
+    
+#     # Get existing parameters as dict
+#     query_params = dict(parse_qsl(parsed_url.query))
+    
+#     # Update/add filter parameters
+#     for key, value in filters.items():
+#         if value is not None and value != "":
+#             query_params[key] = value
+    
+#     # Rebuild the URL
+#     url_parts = list(parsed_url)
+#     url_parts[4] = urlencode(query_params)
+    
+#     return urlunparse(url_parts)
+
+def apply_property_filters(search_url, filters):
     """
-    Apply property filters to a PropertyFinder URL, handling both regular and array parameters.
+    Apply property filters to search URL
     
     Args:
-        base_url (str): The base URL from initial search
-        filters (dict): Dictionary of filters to apply
+        search_url (str): Original search URL
+        filters (dict): Selected filter parameters
         
     Returns:
-        str: Modified URL with filters applied
+        str: Updated URL with filters applied
     """
-    # Parse the URL
-    parsed_url = urlparse(base_url)
+    # Start with the original search URL
+    filtered_url = search_url
     
-    # Get existing parameters as dict
-    query_params = dict(parse_qsl(parsed_url.query))
+    # Add each filter parameter
+    for param, value in filters.items():
+        # Check if URL already has parameters
+        if '?' in filtered_url:
+            filtered_url += f"&{param}={value}"
+        else:
+            filtered_url += f"?{param}={value}"
     
-    # Update/add filter parameters
-    for key, value in filters.items():
-        if value is not None and value != "":
-            query_params[key] = value
-    
-    # Rebuild the URL
-    url_parts = list(parsed_url)
-    url_parts[4] = urlencode(query_params)
-    
-    return urlunparse(url_parts)
+    return filtered_url
+
+# Add these options to your filter options dictionary (should be near the top of your code)
+LISTED_WITHIN_OPTIONS = [
+    {"label": "Any", "value": ""},
+    {"label": "Less than 1 day", "value": "86400"},
+    {"label": "Less than 7 days", "value": "604800"},
+    {"label": "Less than 15 days", "value": "1296000"},
+    {"label": "Less than 30 days", "value": "2592000"},
+    {"label": "Less than 90 days", "value": "7776000"},
+]
 
 # Constants for filter options
 FILTER_OPTIONS = {
@@ -991,7 +1025,14 @@ FILTER_OPTIONS = {
             "Beds (least)": "ba",
             "Beds (most)": "bd"
         }
+    },
+
+    "listed_within": {
+        "parameter": "lw",
+        "options": {option["label"]: option["value"] for option in LISTED_WITHIN_OPTIONS}
     }
+
+
 }
 
 
@@ -1036,6 +1077,19 @@ def display_property_filters():
         bedroom_value = FILTER_OPTIONS["bedrooms"]["options"][bedrooms]
         if bedroom_value:
             selected_filters[FILTER_OPTIONS["bedrooms"]["parameter"]] = bedroom_value
+        
+        # Added Listed Within filter
+        listed_within = st.selectbox(
+            "Listed Within",
+            list(FILTER_OPTIONS["listed_within"]["options"].keys()),
+            index=0
+        )
+        
+        # Only add if not "Any"
+        listed_within_value = FILTER_OPTIONS["listed_within"]["options"][listed_within]
+        if listed_within_value:
+            selected_filters[FILTER_OPTIONS["listed_within"]["parameter"]] = listed_within_value
+  
     
     # Second column: Bathrooms & Sort
     with col2:
