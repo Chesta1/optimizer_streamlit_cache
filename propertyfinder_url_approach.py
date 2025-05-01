@@ -802,73 +802,55 @@ FILTER_OPTIONS = {
 COUNTRY_OPTIONS = ["UAE", "Bahrain", "Qatar", "Egypt", "Kingdom-of-Saudi Arabia"]
 
 
-# ---------------- STREAMLIT UI ----------------
 st.set_page_config(page_title="Property Finder Search Tool", layout="centered")
 st.title("📍 Property Finder Listing Scraper")
 
 with st.form("property_finder_form"):
-    country_selection = st.selectbox("Select country:", COUNTRY_OPTIONS)
-    base_url = country_url(country_selection)
+    country = st.selectbox("Select country:", COUNTRY_OPTIONS, key="country")
+    base_url = country_url(country)
 
-    location_query = st.text_input("Enter location (e.g., Palm Jumeirah)")
-    category_selection = st.selectbox(
+    location_query = st.text_input("Enter location (e.g., Palm Jumeirah)", key="location_query")
+
+    category = st.selectbox(
         "Category",
         CATEGORY_OPTIONS,
-        format_func=lambda x: x["label"]
+        format_func=lambda x: x["label"],
+        key="category"
     )
-    prop_list = PROPERTY_TYPES[country_selection][category_selection["label"]]
-    prop_selection = st.selectbox(
+
+    prop_list = PROPERTY_TYPES[country][category["label"]]
+    prop = st.selectbox(
         "Property Type",
         prop_list,
-        format_func=lambda x: x["label"]
+        format_func=lambda x: x["label"],
+        key="prop"
     )
 
-    # Create two columns for filter layout
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Multiple bedroom selection
-        selected_bedrooms = st.multiselect(
-            "Bedrooms",
-            options=list(FILTER_OPTIONS["bedrooms"]["options"].keys()),
-            default=["Any"]
-        )
-        
-        # Furnishing selection with unique key
-        furnishing_selection = st.selectbox(
-            "Furnishing", 
-            FURNISHING_OPTIONS, 
-            format_func=lambda x: x['label'],
-            key="furnishing_col1"
-        )
-    
-    with col2:
-        # Bathroom selection
-        bathroom_selection = st.selectbox(
-            "Bathrooms", 
-            options=list(FILTER_OPTIONS["bathrooms"]["options"].keys()),
-            index=0  # Default to "Any"
-        )
-        
-        # Added completion status to col2 for better balance
-        completion_status_selection = st.selectbox(
-            "Completion Status", 
-            COMPLETION_STATUS_OPTIONS, 
-            format_func=lambda x: x['label']
-        )
-    
-    # Moved outside columns for a cleaner layout
-    listed_within_selection = st.selectbox(
-        "Listed Within", 
-        LISTED_WITHIN_OPTIONS, 
-        format_func=lambda x: x["label"]
+    furnishing = st.selectbox(
+        "Furnishing",
+        FURNISHING_OPTIONS,
+        format_func=lambda x: x['label'],
+        key="furnishing"
     )
 
-    # Sort option
-    sort_selection = st.selectbox(
-        "Sort By", 
+    completion = st.selectbox(
+        "Completion Status",
+        COMPLETION_STATUS_OPTIONS,
+        format_func=lambda x: x['label'],
+        key="completion"
+    )
+
+    listed_within = st.selectbox(
+        "Listed Within",
+        LISTED_WITHIN_OPTIONS,
+        format_func=lambda x: x["label"],
+        key="listed_within"
+    )
+
+    sort_by = st.selectbox(
+        "Sort By",
         options=list(FILTER_OPTIONS["sort"]["options"].keys()),
-        index=0  # Default to "Featured"
+        key="sort"
     )
 
     submitted = st.form_submit_button("🔍 Submit Search")
@@ -877,142 +859,99 @@ with st.form("property_finder_form"):
 # Initialize session state variables at the top of your script
 # Add these session state keys near the top of your script where you initialize other state variables
 # Initialize session state variables at the top of your script
-if "location_query_submitted" not in st.session_state:
-    st.session_state["location_query_submitted"] = False
-if "locations_found" not in st.session_state:
-    st.session_state["locations_found"] = None
-if "location_selected" not in st.session_state:
-    st.session_state["location_selected"] = False
-if "selected_loc" not in st.session_state:
-    st.session_state["selected_loc"] = None
-if "confirmed_location" not in st.session_state:
-    st.session_state["confirmed_location"] = False
-
-# Main form submission handler
-if submitted and location_query:
+if submitted and st.session_state["location_query"]:
     st.session_state["location_query_submitted"] = True
-    st.session_state["last_query"] = location_query
-    
-    # Only make API call if we haven't stored locations already or if the query changed
-    if not st.session_state["locations_found"] or st.session_state.get("last_query") != location_query:
-        locations = get_location_id(location_query, base_url)
-        st.session_state["locations_found"] = locations
+    st.session_state["last_query"] = st.session_state["location_query"]
+
+    if (
+        not st.session_state.get("locations_found") or
+        st.session_state["last_query"] != st.session_state["location_query"]
+    ):
+        locs = get_location_id(st.session_state["location_query"], base_url)
+        st.session_state["locations_found"] = locs
         st.session_state["confirmed_location"] = False
-        st.session_state["location_selected"] = False
     else:
-        locations = st.session_state["locations_found"]
-    
-    if locations:
-        exact = [loc for loc in locations if loc['name'].lower() == location_query.strip().lower()]
+        locs = st.session_state["locations_found"]
+
+    if locs:
+        exact = [l for l in locs if l['name'].lower() == st.session_state["location_query"].strip().lower()]
         if exact:
-            # If exact match found, use it and mark as confirmed
             st.session_state["selected_loc"] = exact[0]
             st.session_state["confirmed_location"] = True
-        # Otherwise, we'll handle no-exact-match case below
 
-# This code runs OUTSIDE the form submission IF block so it persists
-if st.session_state["location_query_submitted"] and st.session_state["locations_found"]:
-    locations = st.session_state["locations_found"]
-    
-    # If no exact match was found and location not confirmed yet
-    if not st.session_state["confirmed_location"]:
-        st.warning("⚠️ No exact match found. Please select from these options:")
-        
-        # Create selection options with ID
-        location_options = [f"{loc['name']} (ID: {loc['id']})" for loc in locations]
-        selected_location = st.selectbox("Select location:", location_options, key="location_selector")
-        
-        # Add a confirmation button (OUTSIDE any conditional)
-        if st.button("Confirm Location Selection", key="confirm_loc_btn"):
-            # Extract the ID from the selected option using regex
-            import re
-            match = re.search(r'ID: (\d+)', selected_location)
-            if match:
-                selected_id = match.group(1)
-                # Find the location object that matches this ID
-                loc = next((loc for loc in locations if str(loc['id']) == selected_id), None)
-                if loc:
-                    # Store the selected location
-                    st.session_state["selected_loc"] = loc
+if (
+    st.session_state.get("location_query_submitted") and
+    st.session_state.get("locations_found")
+):
+    locs = st.session_state["locations_found"]
+    if not st.session_state.get("confirmed_location"):
+        st.warning("⚠️ No exact match. Please select:")
+        opts = [f"{l['name']} (ID:{l['id']})" for l in locs]
+        choice = st.selectbox("Select location", opts, key="loc_select")
+        if st.button("Confirm Location", key="confirm_loc"):
+            m = re.search(r'ID:(\d+)', choice)
+            if m:
+                sel = next((l for l in locs if str(l['id'])==m.group(1)), None)
+                if sel:
+                    st.session_state["selected_loc"] = sel
                     st.session_state["confirmed_location"] = True
-                    # No need for experimental_rerun - Streamlit will automatically rerun on next event
             else:
-                st.error("Failed to extract location ID. Please try again.")
-    
-    # Process the confirmed location
-    if st.session_state["confirmed_location"] and st.session_state["selected_loc"]:
+                st.error("Couldn't parse ID.")
+
+    if st.session_state.get("confirmed_location"):
         loc = st.session_state["selected_loc"]
-        
-        # Now proceed with the selected location
-        location_id = loc['id']
-        st.write(f"Selected: {loc['name']} (ID: {location_id})")
-        
-        # Get all the selection values
-        category_value = category_selection['value']
-        prop_value = prop_selection['value']
-        completion_value = completion_status_selection['value']
-        furnishing_value = furnishing_selection['value']
-        listed_within_value = listed_within_selection["value"]
-        
-        # Store the category value for later use with the correct key name
-        st.session_state["transaction_type_value"] = category_value
-        
-        # Construct base search URL
-        # search_url = f"{base_url}/en/search?l={location_id}&c={category_value}&t={prop_value}&fu={furnishing_value}&cs={completion_value}"
-        search_url = f"{base_url}/en/search?l={location_id}&c={category_value}"
+        st.write(f"Selected: {loc['name']} (ID:{loc['id']})")
 
-        if prop_value:
-            search_url += f"&t={prop_value}"
+        c = st.session_state["category"]["value"]
+        t = st.session_state["prop"]["value"]
+        bed_selections = st.session_state.get("bedrooms", [])
+        bath_selections = st.session_state.get("bathrooms", [])
+        fu = st.session_state["furnishing"]["value"]
+        cs = st.session_state["completion"]["value"]
+        lw = st.session_state["listed_within"]["value"]
+        ob = FILTER_OPTIONS["sort"]["options"][st.session_state["sort"]]
 
-        # Add furnishing only if not default
-        if furnishing_value and furnishing_value != "0":
-            search_url += f"&fu={furnishing_value}"
+        url = f"{base_url}/en/search?l={loc['id']}&c={c}"
+        if t:
+            url += f"&t={t}"
+        if bed_selections and "Any" not in bed_selections:
+            for br in bed_selections:
+                val = FILTER_OPTIONS["bedrooms"]["options"][br]
+                if val:
+                    url += f"&bdr[]={val}"
+        if bath_selections and "Any" not in bath_selections:
+            for ba in bath_selections:
+                val = FILTER_OPTIONS["bathrooms"]["options"][ba]
+                if val:
+                    url += f"&btr[]={val}"
+        if fu != '0':
+            url += f"&fu={fu}"
+        if cs:
+            url += f"&cs={cs}"
+        if lw:
+            url += f"&lw={lw}"
+        if ob:
+            url += f"&ob={ob}"
 
-        # Add completion status only if specified
-        if completion_value:
-            search_url += f"&cs={completion_value}"
-        
-        # Add multiple bedroom filters if selected and not "Any"
-        if 'selected_bedrooms' in locals() and selected_bedrooms and "Any" not in selected_bedrooms:
-            for br in selected_bedrooms:
-                bed_value = FILTER_OPTIONS["bedrooms"]["options"][br]
-                if bed_value:  # Only add if not empty
-                    search_url += f"&bdr[]={bed_value}"
-        
-        # Add bathroom filter if not "Any"
-        if 'bathroom_selection' in locals() and bathroom_selection != "Any":
-            bath_value = FILTER_OPTIONS["bathrooms"]["options"][bathroom_selection]
-            search_url += f"&btr[]={bath_value}"
-        
-        # Add listed within filter if selected
-        if listed_within_value:
-            search_url += f"&lw={listed_within_value}"
-        
-        # Add sort option if available
-        if 'sort_selection' in locals() and sort_selection:
-            sort_value = FILTER_OPTIONS["sort"]["options"][sort_selection]
-            if sort_value:
-                search_url += f"&ob={sort_value}"
-
-        # Display the search link
-        st.markdown(f"🔗 [Open Search Page for {loc['name']}]({search_url})", unsafe_allow_html=True)
+        st.write("🔗 Final URL:", url)
+        st.session_state["search_url"] = url
         
         # Save state for later use
-        st.session_state["search_url"] = search_url
+        st.session_state["search_url"] = url
         st.session_state["location_name"] = loc['name']
 
         # Fetch pagination info
         if 'pagination_fetched' not in st.session_state or not st.session_state['pagination_fetched']:
             with st.spinner("Fetching listings and pagination..."):
                 driver = setup_webdriver()
-                total_pages, property_count = get_total_pages(driver, search_url)
+                total_pages, property_count = get_total_pages(driver, url)
                 driver.quit()
                 st.session_state["total_pages"] = total_pages
                 st.session_state["property_count"] = property_count
                 st.session_state['pagination_fetched'] = True
 
             st.success(f"📊 {property_count} properties found across {total_pages} pages.")
-            st.markdown(f"🔗 [Open Search Page for {loc['name']}]({search_url})", unsafe_allow_html=True)
+            st.markdown(f"🔗 [Open Search Page for {loc['name']}]({url})", unsafe_allow_html=True)
 
 # ─── SECOND FORM: PAGINATION ───────────────────────────────────────────────────
 if "search_url" in st.session_state and st.session_state.get("total_pages", 0) > 0:
