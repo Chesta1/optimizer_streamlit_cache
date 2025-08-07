@@ -938,60 +938,37 @@ import re
 # Constants from your original code
 WAIT_TIMEOUT = 15
 PAGE_LOAD_DELAY = 5
-
 def get_stealth_driver():
-    """Create a stealth WebDriver for Streamlit Cloud deployment."""
+    """Create stealth driver for Streamlit Cloud with your packages.txt"""
     try:
         print("🚀 Creating Stealth WebDriver for Streamlit Cloud...")
         
         chrome_options = Options()
+        chrome_options.headless = True
         
-        # For Streamlit Cloud - must be headless
-        chrome_options.headless = True  # Changed to True for cloud deployment
+        # Your packages.txt should handle these dependencies
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--disable-features=ChromeHeadlessScreenshots")
+        chrome_options.add_argument("--disable-extensions")
         
-        # Anti-detection options
+        # Anti-detection
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        # Linux/Cloud specific options
-        chrome_options.add_argument("--no-sandbox")  # Required for cloud
-        chrome_options.add_argument("--disable-dev-shm-usage")  # Required for cloud
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--disable-infobars")
-        chrome_options.add_argument("--disable-notifications")
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument("--disable-web-security")
-        chrome_options.add_argument("--remote-debugging-port=9222")
-        
-        # Set binary location for Streamlit Cloud (Linux)
-        chrome_options.binary_location = "/usr/bin/chromium"
-        
-        # User agent for Linux
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-        
-        # Service for Streamlit Cloud (Linux paths)
-        service = Service(
-            executable_path='/usr/bin/chromedriver',
-            log_path='/tmp/chromedriver.log',
-            service_args=['--verbose']
-        )
-        
-        # Create driver
+        # Try standard Streamlit Cloud paths
+        service = Service(executable_path='/usr/bin/chromedriver')
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
         # Stealth scripts
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        driver.execute_script("Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});")
-        driver.execute_script("Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});")
         
-        print("✅ Stealth Driver created successfully for Streamlit Cloud")
         return driver
         
     except Exception as e:
-        print(f"❌ Failed to initialize ChromeDriver: {str(e)}")
-        st.error(f"❌ Failed to initialize ChromeDriver: {str(e)}")
+        st.error(f"ChromeDriver failed: {str(e)}")
         raise
 
 def handle_initial_popups(driver):
