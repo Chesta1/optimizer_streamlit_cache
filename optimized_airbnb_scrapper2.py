@@ -1,601 +1,1336 @@
-import logging
-import urllib.parse
+# # Step 1: Enhanced Navigation with Anti-Detection Measures
+# # This handles the popup issue when Selenium is detected
+
+# import time
+# import urllib.parse
+# from datetime import datetime, timedelta
+# from selenium import webdriver
+# from selenium.webdriver.chrome.service import Service
+# from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# import streamlit as st
+# import subprocess
+# import traceback
+
+# def get_stealth_driver():
+#     """Create a stealth WebDriver that's harder to detect."""
+#     try:
+#         print("🚀 Creating Stealth WebDriver...")
+#         st.write("🚀 Creating Stealth WebDriver...")
+        
+#         # Initialize Chrome options with stealth settings
+#         chrome_options = Options()
+        
+#         # Headless mode disabled for testing
+#         chrome_options.headless = False
+        
+#         # Anti-detection options
+#         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+#         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+#         chrome_options.add_experimental_option('useAutomationExtension', False)
+        
+#         # Basic options
+#         chrome_options.add_argument("--disable-dev-shm-usage")
+#         chrome_options.add_argument("--disable-gpu")
+#         chrome_options.add_argument("--window-size=1920,1080")
+#         chrome_options.add_argument("--disable-infobars")
+#         chrome_options.add_argument("--disable-notifications")
+        
+#         # More realistic user agent
+#         chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+#         # Your ChromeDriver path
+#         chromedriver_path = r"C:\Users\Chesta\Downloads\chromedriver-win64 (1)\chromedriver-win64\chromedriver.exe"
+        
+#         # Initialize service
+#         service = Service(executable_path=chromedriver_path)
+        
+#         # Create driver
+#         driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+#         # Execute script to hide webdriver property
+#         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        
+#         # Additional stealth scripts
+#         driver.execute_script("""
+#             Object.defineProperty(navigator, 'plugins', {
+#                 get: () => [1, 2, 3, 4, 5]
+#             });
+#         """)
+        
+#         driver.execute_script("""
+#             Object.defineProperty(navigator, 'languages', {
+#                 get: () => ['en-US', 'en']
+#             });
+#         """)
+        
+#         print("✅ Stealth Driver created successfully")
+#         st.write("✅ Stealth Driver created successfully")
+        
+#         return driver
+        
+#     except Exception as e:
+#         print(f"❌ Failed to initialize ChromeDriver: {str(e)}")
+#         st.error(f"❌ Failed to initialize ChromeDriver: {str(e)}")
+#         raise
+
+# def navigate_with_manual_approach(driver, search_location):
+#     """Navigate to Airbnb using a more manual approach to avoid detection."""
+#     try:
+#         print(f"🌐 Starting manual navigation approach for: {search_location}")
+#         st.write(f"🌐 Starting manual navigation approach for: {search_location}")
+        
+#         # Step 1: Go to Airbnb homepage first (looks more natural)
+#         print("🏠 First, going to Airbnb homepage...")
+#         st.write("🏠 First, going to Airbnb homepage...")
+#         driver.get("https://www.airbnb.com")
+#         time.sleep(3)
+        
+#         print(f"📄 Homepage loaded: {driver.title}")
+#         st.write(f"📄 Homepage loaded: {driver.title}")
+        
+#         # Step 2: Now build the search URL
+#         today = datetime.now()
+#         check_in_date = today + timedelta(days=1)
+#         check_out = check_in_date + timedelta(days=6)
+        
+#         checkin_str = check_in_date.strftime('%Y-%m-%d')
+#         checkout_str = check_out.strftime('%Y-%m-%d')
+        
+#         print(f"📅 Dates: {checkin_str} to {checkout_str}")
+#         st.write(f"📅 Dates: {checkin_str} to {checkout_str}")
+        
+#         # Step 3: Navigate to search results
+#         search_url = f"https://www.airbnb.com/s/{urllib.parse.quote(search_location)}/homes?checkin={checkin_str}&checkout={checkout_str}"
+        
+#         print(f"🔗 Search URL: {search_url}")
+#         st.write(f"🔗 Search URL: {search_url}")
+        
+#         print("🔍 Navigating to search results...")
+#         st.write("🔍 Navigating to search results...")
+        
+#         driver.get(search_url)
+#         time.sleep(5)
+        
+#         print(f"📄 Search page loaded: {driver.title}")
+#         st.write(f"📄 Search page loaded: {driver.title}")
+        
+#         # Step 4: Check for popups and handle them
+#         print("🔍 Checking for popups...")
+#         st.write("🔍 Checking for popups...")
+        
+#         popup_found = check_and_handle_popups(driver)
+        
+#         if popup_found:
+#             print("✅ Handled popups successfully")
+#             st.write("✅ Handled popups successfully")
+#         else:
+#             print("ℹ️ No popups detected")
+#             st.write("ℹ️ No popups detected")
+        
+#         # Step 5: Check if we successfully loaded listings
+#         time.sleep(3)  # Wait for content to load
+        
+#         # Look for common Airbnb elements that indicate successful loading
+#         indicators = [
+#             "Over 1,000 homes",  # Text that often appears
+#             "homes",
+#             "listings"
+#         ]
+        
+#         page_text = driver.page_source.lower()
+#         success_indicators = [ind for ind in indicators if ind.lower() in page_text]
+        
+#         print(f"🎯 Found success indicators: {success_indicators}")
+#         st.write(f"🎯 Found success indicators: {success_indicators}")
+        
+#         return True
+        
+#     except Exception as e:
+#         print(f"❌ Navigation failed: {str(e)}")
+#         st.error(f"❌ Navigation failed: {str(e)}")
+#         return False
+
+# def check_and_handle_popups(driver):
+#     """Check for and handle common Airbnb popups."""
+#     popup_found = False
+    
+#     try:
+#         # Wait a bit for any popups to appear
+#         time.sleep(2)
+        
+#         # Common popup selectors
+#         popup_selectors = [
+#             ("//button[contains(text(), 'Got it')]", "Got it button"),
+#             ("//button[contains(text(), 'OK')]", "OK button"),
+#             ("//button[contains(text(), 'Accept')]", "Accept button"),
+#             ("//button[contains(text(), 'Continue')]", "Continue button"),
+#             ("//button[@aria-label='Close']", "Close button"),
+#             ("//div[@role='dialog']//button", "Dialog buttons"),
+#         ]
+        
+#         for selector, description in popup_selectors:
+#             try:
+#                 elements = driver.find_elements(By.XPATH, selector)
+#                 if elements:
+#                     print(f"🔍 Found {len(elements)} {description}")
+#                     st.write(f"🔍 Found {len(elements)} {description}")
+                    
+#                     for element in elements:
+#                         if element.is_displayed() and element.is_enabled():
+#                             print(f"🖱️ Clicking {description}")
+#                             st.write(f"🖱️ Clicking {description}")
+#                             element.click()
+#                             popup_found = True
+#                             time.sleep(1)
+#                             break
+#             except Exception as e:
+#                 print(f"Error with {description}: {e}")
+        
+#         return popup_found
+        
+#     except Exception as e:
+#         print(f"Error handling popups: {e}")
+#         return False
+
+# def main_step1_stealth():
+#     """Main function for Step 1 - Stealth navigation test"""
+#     st.set_page_config(page_title="Step 1: Stealth Airbnb Navigation", layout="wide")
+#     st.title("Step 1: Stealth Airbnb Navigation Test")
+#     st.write("This version uses anti-detection measures to avoid popups that appear when Selenium is detected.")
+    
+#     # User input for location
+#     search_location = st.text_input(
+#         "Enter Search Location:",
+#         value="Riyadh",
+#         help="Enter a location to search on Airbnb"
+#     )
+    
+#     # Test navigation button
+#     if st.button("🚀 Test Stealth Navigation"):
+#         if not search_location.strip():
+#             st.error("Please enter a search location.")
+#             return
+            
+#         driver = None
+#         try:
+#             # Step 1: Create stealth driver
+#             driver = get_stealth_driver()
+            
+#             # Step 2: Navigate with manual approach
+#             success = navigate_with_manual_approach(driver, search_location)
+            
+#             if success:
+#                 st.success("✅ Stealth navigation successful!")
+#                 st.info("🔍 Check your Chrome browser window - it should show Airbnb listings without popups.")
+#                 st.info("📱 The browser will stay open for inspection.")
+                
+#                 # Show current URL for comparison
+#                 current_url = driver.current_url
+#                 st.code(f"Current URL: {current_url}")
+                
+#                 st.warning("⚠️ Browser will stay open - close it manually when done.")
+                
+#             else:
+#                 st.error("❌ Stealth navigation failed.")
+#                 if driver:
+#                     driver.quit()
+                
+#         except Exception as e:
+#             st.error(f"💥 Error occurred: {str(e)}")
+#             st.code(traceback.format_exc())
+#             if driver:
+#                 driver.quit()
+
+# if __name__ == "__main__":
+#     main_step1_stealth()
+
+#-------------------------------------------------Second one attempt good one---------------------------------------------------------------
+
+# import time
+# import urllib.parse
+# from datetime import datetime, timedelta
+# from selenium import webdriver
+# from selenium.webdriver.chrome.service import Service
+# from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# import streamlit as st
+# import subprocess
+# import traceback
+
+# def get_stealth_driver():
+#     """Create a stealth WebDriver that's harder to detect."""
+#     try:
+#         print("🚀 Creating Stealth WebDriver...")
+        
+#         # Initialize Chrome options with stealth settings
+#         chrome_options = Options()
+        
+#         # Headless mode disabled for testing
+#         chrome_options.headless = False
+        
+#         # Anti-detection options
+#         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+#         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+#         chrome_options.add_experimental_option('useAutomationExtension', False)
+        
+#         # Basic options
+#         chrome_options.add_argument("--disable-dev-shm-usage")
+#         chrome_options.add_argument("--disable-gpu")
+#         chrome_options.add_argument("--window-size=1920,1080")
+#         chrome_options.add_argument("--disable-infobars")
+#         chrome_options.add_argument("--disable-notifications")
+        
+#         # More realistic user agent
+#         chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+#         # Your ChromeDriver path
+#         chromedriver_path = r"C:\Users\Chesta\Downloads\chromedriver-win64 (1)\chromedriver-win64\chromedriver.exe"
+        
+#         # Initialize service
+#         service = Service(executable_path=chromedriver_path)
+        
+#         # Create driver
+#         driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+#         # Execute script to hide webdriver property
+#         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        
+#         # Additional stealth scripts
+#         driver.execute_script("""
+#             Object.defineProperty(navigator, 'plugins', {
+#                 get: () => [1, 2, 3, 4, 5]
+#             });
+#         """)
+        
+#         driver.execute_script("""
+#             Object.defineProperty(navigator, 'languages', {
+#                 get: () => ['en-US', 'en']
+#             });
+#         """)
+        
+#         print("✅ Stealth Driver created successfully")
+        
+#         return driver
+        
+#     except Exception as e:
+#         print(f"❌ Failed to initialize ChromeDriver: {str(e)}")
+#         st.error(f"❌ Failed to initialize ChromeDriver: {str(e)}")
+#         raise
+
+# def navigate_with_manual_approach(driver, search_location):
+#     """Navigate to Airbnb using a more manual approach to avoid detection."""
+#     try:
+#         print(f"🌐 Starting manual navigation approach for: {search_location}")
+        
+#         # Step 1: Go to Airbnb homepage first (looks more natural)
+#         print("🏠 First, going to Airbnb homepage...")
+#         driver.get("https://www.airbnb.com")
+#         time.sleep(3)
+        
+#         print(f"📄 Homepage loaded: {driver.title}")
+        
+#         # Step 2: Now build the search URL
+#         today = datetime.now()
+#         check_in_date = today + timedelta(days=1)
+#         check_out = check_in_date + timedelta(days=6)
+        
+#         checkin_str = check_in_date.strftime('%Y-%m-%d')
+#         checkout_str = check_out.strftime('%Y-%m-%d')
+        
+#         print(f"📅 Dates: {checkin_str} to {checkout_str}")
+        
+#         # Step 3: Navigate to search results
+#         search_url = f"https://www.airbnb.com/s/{urllib.parse.quote(search_location)}/homes?checkin={checkin_str}&checkout={checkout_str}"
+        
+#         print(f"🔗 Search URL: {search_url}")
+        
+#         print("🔍 Navigating to search results...")
+        
+#         driver.get(search_url)
+#         time.sleep(5)
+        
+#         print(f"📄 Search page loaded: {driver.title}")
+        
+#         # Step 4: Check for popups and handle them
+#         print("🔍 Checking for popups...")
+        
+#         popup_found = check_and_handle_popups(driver)
+        
+#         if popup_found:
+#             print("✅ Handled popups successfully")
+#         else:
+#             print("ℹ️ No popups detected")
+        
+#         # Step 5: Check if we successfully loaded listings
+#         time.sleep(3)  # Wait for content to load
+        
+#         # Look for common Airbnb elements that indicate successful loading
+#         indicators = [
+#             "Over 1,000 homes",  # Text that often appears
+#             "homes",
+#             "listings"
+#         ]
+        
+#         page_text = driver.page_source.lower()
+#         success_indicators = [ind for ind in indicators if ind.lower() in page_text]
+        
+#         print(f"🎯 Found success indicators: {success_indicators}")
+        
+#         return True
+        
+#     except Exception as e:
+#         print(f"❌ Navigation failed: {str(e)}")
+#         st.error(f"❌ Navigation failed: {str(e)}")
+#         return False
+
+# def check_and_handle_popups(driver):
+#     """Check for and handle common Airbnb popups."""
+#     popup_found = False
+    
+#     try:
+#         # Wait a bit for any popups to appear
+#         time.sleep(2)
+        
+#         # Common popup selectors
+#         popup_selectors = [
+#             ("//button[contains(text(), 'Got it')]", "Got it button"),
+#             ("//button[contains(text(), 'OK')]", "OK button"),
+#             ("//button[contains(text(), 'Accept')]", "Accept button"),
+#             ("//button[contains(text(), 'Continue')]", "Continue button"),
+#             ("//button[@aria-label='Close']", "Close button"),
+#             ("//div[@role='dialog']//button", "Dialog buttons"),
+#         ]
+        
+#         for selector, description in popup_selectors:
+#             try:
+#                 elements = driver.find_elements(By.XPATH, selector)
+#                 if elements:
+#                     print(f"🔍 Found {len(elements)} {description}")
+                    
+#                     for element in elements:
+#                         if element.is_displayed() and element.is_enabled():
+#                             print(f"🖱️ Clicking {description}")
+#                             element.click()
+#                             popup_found = True
+#                             time.sleep(1)
+#                             break
+#             except Exception as e:
+#                 print(f"Error with {description}: {e}")
+        
+#         return popup_found
+        
+#     except Exception as e:
+#         print(f"Error handling popups: {e}")
+#         return False
+
+# def main_step1_stealth():
+#     """Main function for Step 1 - Stealth navigation test"""
+#     st.set_page_config(page_title="Step 1: Stealth Airbnb Navigation", layout="wide")
+#     st.title("Step 1: Stealth Airbnb Navigation Test")
+#     st.write("This version uses anti-detection measures to avoid popups that appear when Selenium is detected.")
+    
+#     # User input for location
+#     search_location = st.text_input(
+#         "Enter Search Location:",
+#         value="Riyadh",
+#         help="Enter a location to search on Airbnb"
+#     )
+    
+#     # Test navigation button
+#     if st.button("🚀 Test Stealth Navigation"):
+#         if not search_location.strip():
+#             st.error("Please enter a search location.")
+#             return
+            
+#         driver = None
+#         try:
+#             # Step 1: Create stealth driver
+#             driver = get_stealth_driver()
+            
+#             # Step 2: Navigate with manual approach
+#             success = navigate_with_manual_approach(driver, search_location)
+            
+#             if success:
+#                 st.success("✅ Stealth navigation successful!")
+#                 st.info("🔍 Check your Chrome browser window - it should show Airbnb listings without popups.")
+#                 st.info("📱 The browser will stay open for inspection.")
+                
+#                 # Show current URL for comparison
+#                 current_url = driver.current_url
+#                 st.code(f"Current URL: {current_url}")
+                
+#                 st.warning("⚠️ Browser will stay open - close it manually when done.")
+                
+#             else:
+#                 st.error("❌ Stealth navigation failed.")
+#                 if driver:
+#                     driver.quit()
+                
+#         except Exception as e:
+#             st.error(f"💥 Error occurred: {str(e)}")
+#             st.code(traceback.format_exc())
+#             if driver:
+#                 driver.quit()
+
+# if __name__ == "__main__":
+#     main_step1_stealth()
+
+
+
+#---------------------------------------Third Step----------------------------------------------------------
+
+# Step 2: Enhanced Pagination with Stealth Navigation and Scrolling
+# Combines stealth navigation with robust page navigation to the very last page
+
+# import time
+# import urllib.parse
+# from datetime import datetime, timedelta
+# from selenium import webdriver
+# from selenium.webdriver.chrome.service import Service
+# from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+# from selenium.webdriver.common.keys import Keys
+# from bs4 import BeautifulSoup
+# import streamlit as st
+# import subprocess
+# import traceback
+
+# # Constants from your original code
+# WAIT_TIMEOUT = 10
+# PAGE_LOAD_DELAY = 3
+
+# def get_stealth_driver():
+#     """Create a stealth WebDriver that's harder to detect."""
+#     try:
+#         print("🚀 Creating Stealth WebDriver...")
+        
+#         # Initialize Chrome options with stealth settings
+#         chrome_options = Options()
+#         chrome_options.headless = False
+        
+#         # Anti-detection options
+#         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+#         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+#         chrome_options.add_experimental_option('useAutomationExtension', False)
+        
+#         # Basic options
+#         chrome_options.add_argument("--disable-dev-shm-usage")
+#         chrome_options.add_argument("--disable-gpu")
+#         chrome_options.add_argument("--window-size=1920,1080")
+#         chrome_options.add_argument("--disable-infobars")
+#         chrome_options.add_argument("--disable-notifications")
+        
+#         # More realistic user agent
+#         chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+#         # Your ChromeDriver path
+#         chromedriver_path = r"C:\Users\Chesta\Downloads\chromedriver-win64 (1)\chromedriver-win64\chromedriver.exe"
+        
+#         # Initialize service
+#         service = Service(executable_path=chromedriver_path)
+        
+#         # Create driver
+#         driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+#         # Execute script to hide webdriver property
+#         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        
+#         # Additional stealth scripts
+#         driver.execute_script("""
+#             Object.defineProperty(navigator, 'plugins', {
+#                 get: () => [1, 2, 3, 4, 5]
+#             });
+#         """)
+        
+#         driver.execute_script("""
+#             Object.defineProperty(navigator, 'languages', {
+#                 get: () => ['en-US', 'en']
+#             });
+#         """)
+        
+#         print("✅ Stealth Driver created successfully")
+#         return driver
+        
+#     except Exception as e:
+#         print(f"❌ Failed to initialize ChromeDriver: {str(e)}")
+#         st.error(f"❌ Failed to initialize ChromeDriver: {str(e)}")
+#         raise
+
+# def handle_initial_popups(driver):
+#     """Handle popups that appear on initial page load."""
+#     print("🔍 Handling initial popups...")
+    
+#     try:
+#         time.sleep(2)  # Wait for popups to appear
+        
+#         popup_selectors = [
+#             ("//button[contains(text(), 'Got it')]", "Got it button"),
+#             ("//button[contains(text(), 'OK')]", "OK button"),
+#             ("//button[contains(text(), 'Accept')]", "Accept button"),
+#             ("//button[contains(text(), 'Continue')]", "Continue button"),
+#             ("//button[@aria-label='Close']", "Close button"),
+#             ("//div[@role='dialog']//button", "Dialog buttons"),
+#         ]
+        
+#         popup_handled = False
+#         for selector, description in popup_selectors:
+#             try:
+#                 elements = driver.find_elements(By.XPATH, selector)
+#                 if elements:
+#                     print(f"🔍 Found {len(elements)} {description}")
+                    
+#                     for element in elements:
+#                         if element.is_displayed() and element.is_enabled():
+#                             print(f"🖱️ Clicking {description}")
+#                             element.click()
+#                             popup_handled = True
+#                             time.sleep(1)
+#                             break
+#                     if popup_handled:
+#                         break
+#             except Exception as e:
+#                 print(f"Error with {description}: {e}")
+        
+#         if popup_handled:
+#             print("✅ Initial popups handled")
+#         else:
+#             print("ℹ️ No initial popups detected")
+            
+#     except Exception as e:
+#         print(f"Error handling initial popups: {e}")
+
+# def scroll_to_bottom_gradually(driver):
+#     """Gradually scroll to bottom of page to load all content."""
+#     print("📜 Scrolling to load all content...")
+    
+#     try:
+#         # Get initial page height
+#         last_height = driver.execute_script("return document.body.scrollHeight")
+        
+#         scroll_attempts = 0
+#         max_scroll_attempts = 5
+        
+#         while scroll_attempts < max_scroll_attempts:
+#             # Scroll down gradually
+#             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+#             time.sleep(2)
+            
+#             # Calculate new scroll height
+#             new_height = driver.execute_script("return document.body.scrollHeight")
+            
+#             if new_height == last_height:
+#                 # No more content loaded, break
+#                 break
+            
+#             last_height = new_height
+#             scroll_attempts += 1
+#             print(f"📜 Scroll attempt {scroll_attempts}: Page height now {new_height}")
+        
+#         # Scroll back to top
+#         driver.execute_script("window.scrollTo(0, 0);")
+#         time.sleep(1)
+#         print("📜 Scrolling complete, back to top")
+        
+#     except Exception as e:
+#         print(f"Error during scrolling: {e}")
+
+# def find_next_button_enhanced(driver):
+#     """Enhanced next button finding with multiple strategies."""
+#     print("🔍 Looking for Next button with multiple strategies...")
+    
+#     # Multiple selectors to try (from your original code + enhancements)
+#     next_button_selectors = [
+#         # Original from your code
+#         ("//a[@aria-label='Next']", "Next aria-label"),
+        
+#         # Additional selectors
+#         ("//a[contains(@aria-label, 'Next')]", "Next aria-label (contains)"),
+#         ("//button[contains(@aria-label, 'Next')]", "Next button aria-label"),
+#         ("//a[contains(text(), 'Next')]", "Next text"),
+#         ("//button[contains(text(), 'Next')]", "Next button text"),
+#         ("//a[@data-testid='pagination-next']", "Next pagination testid"),
+#         ("//button[@data-testid='pagination-next']", "Next button pagination testid"),
+#         ("//*[contains(@class, 'next') and contains(@class, 'button')]", "Next class button"),
+#         ("//nav//a[last()]", "Last nav link (often Next)"),
+#         ("//div[contains(@class, 'pagination')]//a[last()]", "Last pagination link"),
+#     ]
+    
+#     for selector, description in next_button_selectors:
+#         try:
+#             print(f"🔍 Trying: {description}")
+#             elements = driver.find_elements(By.XPATH, selector)
+            
+#             if elements:
+#                 print(f"   Found {len(elements)} elements")
+                
+#                 for i, element in enumerate(elements):
+#                     try:
+#                         is_displayed = element.is_displayed()
+#                         is_enabled = element.is_enabled()
+#                         element_text = element.text.strip()
+                        
+#                         print(f"   Element {i+1}: displayed={is_displayed}, enabled={is_enabled}, text='{element_text}'")
+                        
+#                         if is_displayed and is_enabled:
+#                             print(f"✅ Found usable Next button: {description}")
+#                             return element
+                            
+#                     except Exception as e:
+#                         print(f"   Element {i+1}: Error checking - {e}")
+#                         continue
+#             else:
+#                 print("   No elements found")
+                
+#         except Exception as e:
+#             print(f"   Error with {description}: {e}")
+    
+#     print("❌ No usable Next button found")
+#     return None
+
+# def click_next_button_safely(driver, next_button):
+#     """Safely click the next button with scrolling and multiple attempts."""
+#     print("🖱️ Attempting to click Next button safely...")
+    
+#     try:
+#         # Strategy 1: Scroll button into view and click
+#         print("🖱️ Strategy 1: Scroll into view and click")
+#         driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", next_button)
+#         time.sleep(1)
+        
+#         # Wait for any animations to complete
+#         time.sleep(1)
+        
+#         try:
+#             next_button.click()
+#             print("✅ Successfully clicked Next button (Strategy 1)")
+#             return True
+#         except Exception as e:
+#             print(f"Strategy 1 failed: {e}")
+        
+#         # Strategy 2: JavaScript click
+#         print("🖱️ Strategy 2: JavaScript click")
+#         try:
+#             driver.execute_script("arguments[0].click();", next_button)
+#             print("✅ Successfully clicked Next button (Strategy 2)")
+#             return True
+#         except Exception as e:
+#             print(f"Strategy 2 failed: {e}")
+        
+#         # Strategy 3: Move to element and click
+#         print("🖱️ Strategy 3: ActionChains move and click")
+#         try:
+#             from selenium.webdriver.common.action_chains import ActionChains
+#             actions = ActionChains(driver)
+#             actions.move_to_element(next_button).click().perform()
+#             print("✅ Successfully clicked Next button (Strategy 3)")
+#             return True
+#         except Exception as e:
+#             print(f"Strategy 3 failed: {e}")
+        
+#         # Strategy 4: Send ENTER key
+#         print("🖱️ Strategy 4: Send ENTER key")
+#         try:
+#             next_button.send_keys(Keys.RETURN)
+#             print("✅ Successfully activated Next button (Strategy 4)")
+#             return True
+#         except Exception as e:
+#             print(f"Strategy 4 failed: {e}")
+        
+#         print("❌ All click strategies failed")
+#         return False
+        
+#     except Exception as e:
+#         print(f"❌ Error in click_next_button_safely: {e}")
+#         return False
+
+# def navigate_all_pages(driver, search_location):
+#     """Navigate through all pages of Airbnb listings."""
+#     try:
+#         print(f"🚀 Starting complete page navigation for: {search_location}")
+        
+#         # Step 1: Initial navigation (from Step 1)
+#         print("🏠 Going to Airbnb homepage first...")
+#         driver.get("https://www.airbnb.com")
+#         time.sleep(3)
+        
+#         # Step 2: Build search URL
+#         today = datetime.now()
+#         check_in_date = today + timedelta(days=1)
+#         check_out = check_in_date + timedelta(days=6)
+        
+#         checkin_str = check_in_date.strftime('%Y-%m-%d')
+#         checkout_str = check_out.strftime('%Y-%m-%d')
+        
+#         search_url = f"https://www.airbnb.com/s/{urllib.parse.quote(search_location)}/homes?checkin={checkin_str}&checkout={checkout_str}"
+#         print(f"🔗 Search URL: {search_url}")
+        
+#         # Step 3: Navigate to search results
+#         print("🔍 Navigating to search results...")
+#         driver.get(search_url)
+#         time.sleep(5)
+        
+#         # Step 4: Handle initial popups
+#         handle_initial_popups(driver)
+        
+#         # Step 5: Page navigation loop (from your original code + enhancements)
+#         page_number = 1
+#         total_pages_processed = 0
+#         max_pages = 50  # Safety limit
+        
+#         while page_number <= max_pages:
+#             print(f"\n📄 Processing page {page_number}...")
+            
+#             # Scroll to load all content on current page
+#             scroll_to_bottom_gradually(driver)
+            
+#             # Wait for page to stabilize
+#             time.sleep(PAGE_LOAD_DELAY)
+            
+#             # Get page source for analysis (we'll extract listings in Step 3)
+#             soup = BeautifulSoup(driver.page_source, 'html.parser')
+            
+#             # Quick check: count listings on this page
+#             listing_elements = soup.find_all('div', {'itemprop': 'itemListElement'})
+#             print(f"📊 Found {len(listing_elements)} listing elements on page {page_number}")
+            
+#             if len(listing_elements) == 0:
+#                 print("⚠️ No listings found on this page - might be end of results")
+#                 break
+            
+#             total_pages_processed += 1
+            
+#             # Look for Next button (from your original code + enhancements)
+#             print(f"🔍 Looking for Next button on page {page_number}...")
+            
+#             next_button = find_next_button_enhanced(driver)
+            
+#             if not next_button:
+#                 print("🛑 No Next button found - reached end of results")
+#                 break
+            
+#             # Check if Next button is disabled (from your original code)
+#             try:
+#                 if not next_button.is_enabled():
+#                     print("🛑 Next button is disabled - reached end of results")
+#                     break
+#             except:
+#                 pass
+            
+#             # Attempt to click Next button
+#             print(f"🖱️ Clicking Next button to go to page {page_number + 1}...")
+            
+#             click_success = click_next_button_safely(driver, next_button)
+            
+#             if not click_success:
+#                 print("❌ Failed to click Next button - stopping pagination")
+#                 break
+            
+#             # Wait for next page to load (from your original code)
+#             print(f"⏳ Waiting for page {page_number + 1} to load...")
+#             time.sleep(PAGE_LOAD_DELAY)
+            
+#             # Verify we moved to next page
+#             try:
+#                 # Wait for page to change
+#                 WebDriverWait(driver, WAIT_TIMEOUT).until(
+#                     lambda d: "page=" in d.current_url.lower() or len(d.find_elements(By.XPATH, "//div[@itemprop='itemListElement']")) > 0
+#                 )
+#                 print(f"✅ Successfully navigated to page {page_number + 1}")
+#                 page_number += 1
+                
+#             except TimeoutException:
+#                 print("⏰ Timeout waiting for next page - stopping pagination")
+#                 break
+#             except Exception as e:
+#                 print(f"❌ Error verifying page change: {e}")
+#                 break
+        
+#         print(f"\n🎉 Page navigation complete!")
+#         print(f"📊 Total pages processed: {total_pages_processed}")
+#         print(f"📄 Final page number: {page_number}")
+        
+#         return total_pages_processed
+        
+#     except Exception as e:
+#         print(f"💥 Error during page navigation: {str(e)}")
+#         return 0
+
+# def main_step2_pagination():
+#     """Main function for Step 2 - Complete page navigation test"""
+#     st.set_page_config(page_title="Step 2: Complete Page Navigation", layout="wide")
+#     st.title("Step 2: Complete Page Navigation with Stealth")
+#     st.write("This will navigate through ALL pages of Airbnb listings using stealth mode and enhanced scrolling.")
+    
+#     # User input for location
+#     search_location = st.text_input(
+#         "Enter Search Location:",
+#         value="Riyadh",
+#         help="Enter a location to search on Airbnb"
+#     )
+    
+#     # Test complete navigation
+#     if st.button("🚀 Navigate All Pages"):
+#         if not search_location.strip():
+#             st.error("Please enter a search location.")
+#             return
+            
+#         driver = None
+#         try:
+#             # Create stealth driver
+#             driver = get_stealth_driver()
+            
+#             # Navigate through all pages
+#             pages_processed = navigate_all_pages(driver, search_location)
+            
+#             if pages_processed > 0:
+#                 st.success(f"✅ Complete navigation successful!")
+#                 st.info(f"📊 Processed {pages_processed} pages of listings")
+#                 st.info("🔍 Check your Chrome browser window to see the final page.")
+#                 st.warning("⚠️ Browser will stay open - close it manually when done.")
+                
+#             else:
+#                 st.error("❌ Page navigation failed.")
+#                 if driver:
+#                     driver.quit()
+                
+#         except Exception as e:
+#             st.error(f"💥 Error occurred: {str(e)}")
+#             st.code(traceback.format_exc())
+#             if driver:
+#                 driver.quit()
+
+# if __name__ == "__main__":
+#     main_step2_pagination()
+
+
+#-----------------------------------------------4th Step inclusion-------------------------------------------------
+
+# Step 3: Complete Data Extraction - Combines pagination with listing data extraction
+# Creates DataFrame with: Title, Rating, Number of Reviews, URL, and Price
+
 import time
-from typing import List, Dict, Tuple
+import urllib.parse
+from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from bs4 import BeautifulSoup
-from selenium.webdriver.chrome.options import Options
-import pandas as pd
 import streamlit as st
-from datetime import datetime, timedelta
-import sqlite3
-from pathlib import Path
-import requests
-import re
-import traceback
+import pandas as pd
 import subprocess
+import traceback
+import re
 
+# Constants from your original code
+WAIT_TIMEOUT = 15
+PAGE_LOAD_DELAY = 5
 
-# Constants
-CACHE_TTL_HOURS = 24
-DB_FILE = "locations_cache.db"
-WAIT_TIMEOUT = 10
-PAGE_LOAD_DELAY = 3
-# CURRENCY_API_KEY = "cur_live_3JddjDyXw3TlQEHbmeThynFz81KeoCxsFe9tLPxI"  # Replace with your actual API key
-# BASE_CURRENCY = "INR"
-# TARGET_CURRENCIES = ["SAR", "AED", "USD"]
-
-# Setup logging
-def setup_logging():
-    """Setup logging configuration."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-    return logging.getLogger(__name__)
-
-logger = setup_logging()
-
-def init_db():
-    """Initialize SQLite database for storing location cache metadata."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS location_cache(
-            location TEXT PRIMARY KEY,
-            timestamp TEXT
-        )
-    """)
-
-    # # Create currency rates table
-    # cursor.execute("""
-    #     CREATE TABLE IF NOT EXISTS currency_rates(
-    #         base_currency TEXT,
-    #         target_currency TEXT,
-    #         rate REAL,
-    #         timestamp TEXT,
-    #         PRIMARY KEY (base_currency, target_currency)
-    #     )
-    # """)
-    conn.commit()
-    conn.close()
-
-# def get_currency_rates() -> Tuple[Dict[str, float], str]:
-#     """
-#     Get currency rates from database or API, ensuring daily rate updates.
-
-#     Returns:
-#     Tuple[Dict[str, float], str]: Dictionary of currency rates with target currencies as keys and the timestamp
-#     """
-#     conn = sqlite3.connect(DB_FILE)
-#     cursor = conn.cursor()
-
-#     try:
-#         # Get today's date in the current timezone
-#         today = datetime.now().date().strftime("%Y-%m-%d")
-#         logger.info(f"Checking for currency rates for today: {today}")
-
-#         # Check for rates for today
-#         cursor.execute("""
-#             SELECT target_currency, rate, timestamp
-#             FROM currency_rates 
-#             WHERE base_currency = ? AND date(timestamp) = ?
-#         """, (BASE_CURRENCY, today))
-
-#         existing_rates = cursor.fetchall()
-#         logger.info(f"Existing rates found: {existing_rates}")
-
-#         # If rates exist for all target currencies, return them
-#         if len(existing_rates) == len(TARGET_CURRENCIES):
-#             rates_dict = {rate[0]: rate[1] for rate in existing_rates}
-#             # Assume all timestamps are the same; take the first one
-#             timestamp = existing_rates[0][2]
-#             logger.info(f"Returning cached rates: {rates_dict} at {timestamp}")
-#             return rates_dict, timestamp
-
-#         # If not, fetch new rates from API
-#         url = "https://api.currencyapi.com/v3/latest"
-#         params = {
-#             "apikey": CURRENCY_API_KEY,
-#             "base_currency": BASE_CURRENCY,
-#             "currencies": ",".join(TARGET_CURRENCIES)
-#         }
-
-#         response = requests.get(url, params=params)
-#         logger.info(f"API Response Status Code: {response.status_code}")
-
-#         if response.status_code == 200:
-#             data = response.json()
-#             logger.info(f"API Response Data: {data}")
-
-#             rates = {}
-#             # Use the exact current timestamp for storage
-#             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-#             # Clear old rates for this base currency
-#             cursor.execute("DELETE FROM currency_rates WHERE base_currency = ?", (BASE_CURRENCY,))
-
-#             # Store new rates
-#             for currency in TARGET_CURRENCIES:
-#                 rate = data['data'][currency]['value']
-#                 rates[currency] = rate
-#                 logger.info(f"Storing rate for {currency}: {rate}")
-#                 cursor.execute("""
-#                     INSERT INTO currency_rates (base_currency, target_currency, rate, timestamp)
-#                     VALUES (?, ?, ?, ?)
-#                 """, (BASE_CURRENCY, currency, rate, timestamp))
-
-#             conn.commit()
-#             logger.info(f"Final rates to return: {rates} at {timestamp}")
-#             return rates, timestamp
-#         else:
-#             logger.error(f"Failed to fetch currency rates: {response.status_code}")
-#             return {}, ""
-            
-#     except Exception as e:
-#         logger.error(f"Error getting currency rates: {str(e)}")
-#         return {}, ""
-#     finally:
-#         conn.close()
-
-def extract_price_value(price_str: str) -> float:
-    """Extract numeric price value from string."""
+def get_stealth_driver():
+    """Create a stealth WebDriver for Streamlit Cloud deployment."""
     try:
-        # Remove ₹ symbol and any commas, then convert to float
-        numeric_str = re.sub(r'[^\d.]', '', price_str)
-        return float(numeric_str)
-    except:
-        return 0.0
-
-def normalize_location(location: str) -> str:
-    """Normalize location string by trimming spaces and standardizing case."""
-    try:
-        # Remove leading and trailing spaces
-        location = location.strip()
-        # Convert to lowercase for uniformity
-        location = location.lower()
-        # Replace multiple spaces with a single space
-        location = re.sub(r'\s+', ' ', location)
-        # Optionally capitalize the first letter of each word
-        location = location.title()
-        return location
-    except Exception as e:
-        logger.error(f"Error normalizing location: {str(e)}")
-        return location
-
-# def convert_price(price_str: str, rates: Dict[str, float]) -> Dict[str, str]:
-#     """Convert price to multiple currencies."""
-#     price_value = extract_price_value(price_str)
-#     converted_prices = {
-#         'INR': f"₹{price_value:,.2f}",
-#         'SAR': f"SAR {price_value * rates.get('SAR', 0):,.2f}",
-#         'AED': f"AED {price_value * rates.get('AED', 0):,.2f}",
-#         'USD': f"${price_value * rates.get('USD', 0):,.2f}"
-#     }
-#     return converted_prices
-
-def is_location_cached(location: str) -> bool:
-    """Check if location is cached and within TTL."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    try:
-        normalized_location = normalize_location(location)
-        cursor.execute("SELECT timestamp FROM location_cache WHERE location = ?", (normalized_location,))
-        row = cursor.fetchone()
-        if row:
-            cached_time = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
-            return datetime.now() - cached_time < timedelta(hours=CACHE_TTL_HOURS)
-        return False
-    finally:
-        conn.close()
-
-def update_location_cache(location: str):
-    """Update cache timestamp for a location."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    try:
-        normalized_location = normalize_location(location)
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("""
-            INSERT OR REPLACE INTO location_cache (location, timestamp)
-            VALUES (?, ?)
-        """, (normalized_location, timestamp))
-        conn.commit()
-    finally:
-        conn.close()
-
-def get_cached_locations() -> List[Tuple[str, str]]:
-    """Get all cached locations with their timestamps."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    try:
-        # return cursor.execute("SELECT location, timestamp FROM location_cache").fetchall()
-        locations = cursor.execute("SELECT location, timestamp FROM location_cache").fetchall()
-        return [(normalize_location(loc[0]), loc[1]) for loc in locations]
-    finally:
-        conn.close()
-
-def clear_location_cache(location: str):
-    """Clear cache for specific location."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    try:
-        cursor.execute("DELETE FROM location_cache WHERE location = ?", (location,))
-        conn.commit()
-        # Also clear the corresponding Streamlit cache
-        st.cache_data.clear()
-        logger.info(f"Cache cleared for location: {location}")
-    except Exception as e:
-        logger.error(f"Error clearing cache for location {location}: {str(e)}")
-    finally:
-        conn.close()
-
-def clear_all_cache():
-    """Clear all cache data."""
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    try:
-        cursor.execute("DELETE FROM location_cache")
-        # cursor.execute("DELETE FROM currency_rates")
-        conn.commit()
-        # Clear Streamlit cache as well
-        st.cache_data.clear()
-        logger.info("All cache cleared successfully.")
-    except Exception as e:
-        logger.error(f"Error clearing all cache: {str(e)}")
-    finally:
-        conn.close()
-
-def cleanup_stale_cache():
-    """Remove stale cache entries."""
-    threshold = (datetime.now() - timedelta(hours=CACHE_TTL_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    try:
-        # Get stale locations before deleting them
-        cursor.execute("SELECT location FROM location_cache WHERE timestamp < ?", (threshold,))
-        stale_locations = cursor.fetchall()
-
-        # Delete stale entries
-        cursor.execute("DELETE FROM location_cache WHERE timestamp < ?", (threshold,))
-
-        # Clear currency rates older than today
-        # today = datetime.now().date().strftime("%Y-%m-%d")
-        # cursor.execute("DELETE FROM currency_rates WHERE date(timestamp) < ?", (today,))
-
-        conn.commit()
-
-        # Clear Streamlit cache if any locations were stale
-        if stale_locations:
-            st.cache_data.clear()
-            logger.info(f"Stale cache entries removed: {stale_locations}")
-    except Exception as e:
-        logger.error(f"Error during cache cleanup: {str(e)}")
-    finally:
-        conn.close()
-
-
-logger = setup_logging()
-
-
-def get_driver():
-    """Create and return a configured WebDriver instance."""
-    try:
-        # First check installed versions
-        try:
-            # Get Chromium version
-            chrome_version_output = subprocess.check_output(['chromium', '--version']).decode()
-            # st.write(f"Installed Chromium: {chrome_version_output.strip()}")
-            
-            # Get ChromeDriver version
-            chromedriver_version_output = subprocess.check_output(['chromedriver', '--version']).decode()
-            # st.write(f"Installed ChromeDriver: {chromedriver_version_output.strip()}")
-            
-        except Exception as e:
-            st.warning(f"Version check failed: {str(e)}")
+        print("🚀 Creating Stealth WebDriver for Streamlit Cloud...")
         
-        # Initialize Chrome options
         chrome_options = Options()
         
-        # Basic required options
-        # chrome_options.add_argument("--headless=new")
-        chrome_options.headless = False
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
+        # For Streamlit Cloud - must be headless
+        chrome_options.headless = True  # Changed to True for cloud deployment
+        
+        # Anti-detection options
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        
+        # Linux/Cloud specific options
+        chrome_options.add_argument("--no-sandbox")  # Required for cloud
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Required for cloud
         chrome_options.add_argument("--disable-gpu")
-        
-        # Set binary location
-        chrome_options.binary_location = "/usr/bin/chromium"
-        
-        # Additional options
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--disable-infobars")
+        chrome_options.add_argument("--disable-notifications")
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-web-security")
-        chrome_options.add_argument("--window-size=1920,1080")
         chrome_options.add_argument("--remote-debugging-port=9222")
         
-        # Generic user agent
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/stable Safari/537.36")
+        # Set binary location for Streamlit Cloud (Linux)
+        chrome_options.binary_location = "/usr/bin/chromium"
         
-        # Initialize service with logging
+        # User agent for Linux
+        chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        # Service for Streamlit Cloud (Linux paths)
         service = Service(
             executable_path='/usr/bin/chromedriver',
             log_path='/tmp/chromedriver.log',
             service_args=['--verbose']
         )
-        # st.write("Attempting to initialize ChromeDriver...")
         
-        # Try to create driver
+        # Create driver
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
-        # Verify browser capabilities
-        # st.write("Driver capabilities:")
-        # st.write(f"Browser version: {driver.capabilities.get('browserVersion', 'unknown')}")
-        # st.write(f"ChromeDriver version: {driver.capabilities.get('chrome', {}).get('chromedriverVersion', 'unknown')}")
+        # Stealth scripts
+        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        driver.execute_script("Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});")
+        driver.execute_script("Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});")
         
+        print("✅ Stealth Driver created successfully for Streamlit Cloud")
         return driver
         
     except Exception as e:
-        st.error(f"Failed to initialize ChromeDriver: {str(e)}")
-        
-        # Try to read ChromeDriver log
-        try:
-            with open('/tmp/chromedriver.log', 'r') as f:
-                st.code(f.read(), language='text')
-        except:
-            st.warning("Could not read ChromeDriver log")
-            
-        st.code(traceback.format_exc())
+        print(f"❌ Failed to initialize ChromeDriver: {str(e)}")
+        st.error(f"❌ Failed to initialize ChromeDriver: {str(e)}")
         raise
 
-
-
-
-
-
-
-@st.cache_data(ttl=CACHE_TTL_HOURS * 3600,show_spinner=False)
-def scrape_listings(search_location: str) -> Tuple[List[Dict], List[int]]:
-    """Scrape all listings for a given location with caching."""
-    # driver = None
+def handle_initial_popups(driver):
+    """Handle popups that appear on initial page load."""
+    print("🔍 Handling initial popups...")
+    
     try:
-        driver = get_driver()
-        all_listings = []
-        listings_per_page = []
-        normalized_location = normalize_location(search_location)
+        time.sleep(2)
+        popup_selectors = [
+            ("//button[contains(text(), 'Got it')]", "Got it button"),
+            ("//button[contains(text(), 'OK')]", "OK button"),
+            ("//button[contains(text(), 'Accept')]", "Accept button"),
+            ("//button[@aria-label='Close']", "Close button"),
+        ]
+        
+        for selector, description in popup_selectors:
+            try:
+                elements = driver.find_elements(By.XPATH, selector)
+                if elements:
+                    for element in elements:
+                        if element.is_displayed() and element.is_enabled():
+                            # print(f"🖱️ Clicking {description}")
+                            element.click()
+                            time.sleep(1)
+                            break
+            except Exception as e:
+                st.write(f"Error with {description}: {e}")
+                
+    except Exception as e:
+        st.write(f"Error handling initial popups: {e}")
+
+# Simple function to remove unwanted text from price
+
+def clean_price_simple(raw_price_text):
+    """
+    Simple logic: Remove everything from beginning until after "Show price breakdown"
+    """
+    
+    if not raw_price_text or raw_price_text == "N/A":
+        return "N/A"
+    
+    # print(f"🔍 Original text: {raw_price_text}")
+    
+    try:
+        # Check if "Show price breakdown" exists in the text
+        if "Show price breakdown" in raw_price_text:
+            # Find the position after "Show price breakdown"
+            breakdown_pos = raw_price_text.find("Show price breakdown")
+            after_breakdown_pos = breakdown_pos + len("Show price breakdown")
+            
+            # Get everything after "Show price breakdown"
+            cleaned_text = raw_price_text[after_breakdown_pos:].strip()
+            
+            # print(f"✅ Cleaned text: {cleaned_text}")
+            return cleaned_text
+        
+        else:
+            # If no "Show price breakdown", return original text
+            # print(f"ℹ️ No 'Show price breakdown' found, returning original")
+            return raw_price_text.strip()
+            
+    except Exception as e:
+        # print(f"❌ Error cleaning text: {e}")
+        return raw_price_text
+
+
+def extract_listing_data(element):
+    """Extract data from a single listing element - from your original code logic."""
+    try:
+        # Extract URL (from your original code)
+        url_meta = element.find('meta', {'itemprop': 'url'})
+        listing_url = url_meta['content'].split('?')[0] if url_meta and url_meta.get('content') else "N/A"
+        
+        # Extract price per day (from your original code)
+        # price_element = price_element = element.find('span', class_="a8jt5op atm_3f_idpfg4 atm_7h_hxbz6r atm_7i_ysn8ba atm_e2_t94yts atm_ks_zryt35 atm_l8_idpfg4 atm_vv_1q9ccgz atm_vy_t94yts a1fdgz01 atm_mk_stnw88 atm_tk_idpfg4 dir dir-ltr")
+        # print(price_element)
+        # price_per_day = price_element.text.strip() if price_element else "N/A"
+        # print(price_per_day)
+        
+        price_element = price_element = element.find('div', class_="_w3xh25")
+        # print(price_element)
+        price_per_day = price_element.text.strip() if price_element else "N/A"
+        # print(price_per_day)
+        clean_price = clean_price_simple(price_per_day)
+        # print(clean_price)
+
+        # Extract total price (from your original code)
+        total_price_element = element.find('div', class_="a8jt5op atm_3f_idpfg4 atm_7h_hxbz6r atm_7i_ysn8ba atm_e2_t94yts atm_ks_zryt35 atm_l8_idpfg4 atm_vv_1q9ccgz atm_vy_t94yts a1fdgz01 atm_mk_stnw88 atm_tk_idpfg4 dir dir-ltr")
+        if total_price_element:
+            total_price_span = total_price_element.find('span', {'aria-hidden': 'true'})
+            total_price = total_price_span.text.strip() if total_price_span else "N/A"
+        else:
+            total_price = "N/A"
+        
+        # Extract listing title (from your original code)
+        listing_card = element.find('div', attrs={'data-testid': 'listing-card-title'})
+        listing_title = listing_card.text.strip() if listing_card else "N/A"
+        
+        # Extract description (from your original code)
+        name_meta = element.find('meta', {'itemprop': 'name'})
+        description = name_meta['content'] if name_meta else "N/A"
+        
+        # Extract rating (from your original code - fixed deprecated warning)
+        rating_element = element.find('span', string=lambda t: t and 'average rating' in t)
+        rating = rating_element.text.strip() if rating_element else "N/A"
+        
+        # Additional extraction: Number of reviews
+        review_element = element.find('span', string=re.compile(r'\(\d+\)'))
+        num_reviews = review_element.text.strip() if review_element else "N/A"
+        
+        listing_data = {
+            'Title': description,                           # Main listing title
+            'Property Type & Location': listing_title,      # From your original code
+            'Rating': rating,                               # From your original code
+            'Number of Reviews': num_reviews,               # Extracted from rating text
+            'Listing-URL': listing_url,                     # From your original code
+            'Price Per Day (USD)': clean_price,          # From your original code
+            # '7-Day Stay Cost (USD)': total_price,          # From your original code
+        }
+        
+        return listing_data
+        
+    except Exception as e:
+        print(f"Error extracting listing data: {e}")
+        return None
+
+def scrape_all_listings_complete(search_location):
+    """Complete scraping function - combines stealth navigation + pagination + data extraction."""
+    driver = None
+    try:
+        # print(f"🚀 Starting complete scraping for: {search_location}")
+        
+        # Step 1: Create stealth driver
+        driver = get_stealth_driver()
+        
+        # Step 2: Initial navigation
+        # print("🏠 Going to Airbnb homepage first...")
+        driver.get("https://www.airbnb.com")
+        time.sleep(3)
+        
+        # Build search URL
         today = datetime.now()
         check_in_date = today + timedelta(days=1)
         check_out = check_in_date + timedelta(days=6)
-
-        # Convert dates to the format expected by the website (e.g., "YYYY-MM-DD")
+        
         checkin_str = check_in_date.strftime('%Y-%m-%d')
         checkout_str = check_out.strftime('%Y-%m-%d')
-
-        # Get currency rates once
-        # currency_rates, _ = get_currency_rates()
-
-        # Get first page
-        base_url = f"https://www.airbnb.com/s/{urllib.parse.quote(search_location)}/homes"
-        # Add date parameters
-        url_with_dates = f"{base_url}?checkin={checkin_str}&checkout={checkout_str}"
-       
-        driver.get(url_with_dates)
-        time.sleep(5) ## added on 3rd December 2024
- 
-     
-        while True:
-            # Wait for listings to load
+        
+        search_url = f"https://www.airbnb.com/s/{urllib.parse.quote(search_location)}/homes?checkin={checkin_str}&checkout={checkout_str}"
+        # print(f"🔗 Search URL: {search_url}")
+        
+        # Navigate to search results
+        # print("🔍 Navigating to search results...")
+        driver.get(search_url)
+        time.sleep(5)
+        
+        # Handle initial popups
+        handle_initial_popups(driver)
+        
+        # Step 3: Extract data from all pages
+        all_listings = []
+        listings_per_page = []
+        page_number = 1
+        max_pages = 50
+        
+        while page_number <= max_pages:
+            # print(f"\n📄 Extracting data from page {page_number}...")
+            
+            # Wait for content to load
             time.sleep(PAGE_LOAD_DELAY)
+            
+            # Get page source
             soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-            # Process current page
+            
+            # Find listing elements (from your original code)
             listing_elements = soup.find_all('div', {'itemprop': 'itemListElement'})
+            # print(f"📊 Found {len(listing_elements)} listing elements on page {page_number}")
+            
+            if len(listing_elements) == 0:
+                # print("⚠️ No listings found - end of results")
+                break
+            
+            # Extract data from each listing
             page_listings = []
-
-            for element in listing_elements:
-                try:
-                    url_meta = element.find('meta', {'itemprop': 'url'})
-                    if url_meta and url_meta.get('content'):
-                        price_str = element.find('span', class_="_11jcbg2").text.strip() if element.find('span', class_="_11jcbg2") else "N/A"
-                        # Get total price for 6 days
-                        total_price_element = element.find('div', class_="_tt122m")
-                        total_price = total_price_element.find('span', {'aria-hidden': 'true'}).text.strip() if total_price_element else "N/A"
-                        
-   
-                        ## added on 3rd dec 2024
-                        listing_card = element.find('div', attrs={'data-testid': 'listing-card-title'})
-                        listing_title = listing_card.text.strip() if listing_card else "N/A"
-                        # listing_testid = listing_card.get('data-testid', 'N/A') if listing_card else "N/A"
-                        # ## added on 3rd dec 2024
-
-                #         # Convert price to multiple currencies
-                #         prices = convert_price(price_str, currency_rates) if price_str != "N/A" else {
-                #             'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'
-                #         }
-
-                #         total_prices = convert_price(total_price, currency_rates) if total_price != "N/A" else {
-                # 'INR': 'N/A', 'SAR': 'N/A', 'AED': 'N/A', 'USD': 'N/A'}
-                        
-                        listing_info = {
-                            'Listing-URL': url_meta['content'].split('?')[0],
-                            # 'price_inr': prices['INR'],
-                            # 'price_sar': prices['SAR'],
-                            'Price Per Day (USD)': price_str,
-                            # 'price_usd': prices['USD'],
-                            # 'total_price_inr': total_prices['INR'],
-                            # 'total_price_sar': total_prices['SAR'],
-                            '7-Day Stay Cost (USD)': total_price,
-                            # 'total_price_usd': total_prices['USD'],
-              
-                            'Listing Description': element.find('meta', {'itemprop': 'name'})['content'] if element.find('meta', {'itemprop': 'name'}) else "N/A",
-                            'Rating': element.find('span', text=lambda t: t and 'average rating' in t).text.strip() if element.find('span', text=lambda t: t and 'average rating' in t) else "N/A",
-                            'Location': search_location,
-                            'Property Type & Location': listing_title,
-                            # 'listing_card_testid': listing_testid
-                        }
-                        page_listings.append(listing_info)
-                except Exception as e:
-                    logger.warning(f"Error processing listing element: {str(e)}")
-                    continue
-
+            for i, element in enumerate(listing_elements):
+                # print(f"  Processing listing {i+1}/{len(listing_elements)}")
+                
+                listing_data = extract_listing_data(element)
+                if listing_data:
+                    page_listings.append(listing_data)
+                    # print(f"  ✅ Extracted: {listing_data['Title'][:50]}...")
+            
             listings_per_page.append(len(page_listings))
             all_listings.extend(page_listings)
-
-            # Try to go to next page
-            try:
-                next_button = WebDriverWait(driver, WAIT_TIMEOUT).until(
-                    EC.presence_of_element_located((By.XPATH, "//a[@aria-label='Next']"))
-                )
-                if not next_button.is_enabled():
-                    break
-                next_button.click()
-                time.sleep(PAGE_LOAD_DELAY)
-            except (TimeoutException, NoSuchElementException):
+            
+            # print(f"✅ Page {page_number} complete: {len(page_listings)} listings extracted")
+            # print(f"📊 Total listings so far: {len(all_listings)}")
+            
+            # Look for Next button
+            next_button_selectors = [
+                ("//a[@aria-label='Next']", "Next aria-label"),  # Your original selector
+                ("//a[contains(@aria-label, 'Next')]", "Next aria-label (contains)"),
+                ("//button[contains(@aria-label, 'Next')]", "Next button"),
+                ("//a[contains(text(), 'Next')]", "Next text"),
+            ]
+            
+            next_button = None
+            for selector, description in next_button_selectors:
+                try:
+                    elements = driver.find_elements(By.XPATH, selector)
+                    if elements:
+                        for element in elements:
+                            if element.is_displayed() and element.is_enabled():
+                                next_button = element
+                                # print(f"✅ Found Next button: {description}")
+                                break
+                        if next_button:
+                            break
+                except Exception as e:
+                    st.error(f"The error is {e}.")
+                    continue
+            
+            if not next_button:
+                # print("🛑 No Next button found - reached end of results")
                 break
-
-        # Update location cache in database
-        update_location_cache(normalized_location)
+            
+            # Check if Next button is disabled (from your original code)
+            if not next_button.is_enabled():
+                # print("🛑 Next button is disabled - reached end of results")
+                break
+            
+            # Click Next button with enhanced strategies
+            # print(f"🖱️ Clicking Next button to go to page {page_number + 1}...")
+            
+            try:
+                # Scroll button into view
+                driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", next_button)
+                time.sleep(1)
+                
+                # Try to click
+                next_button.click()
+                # print(f"✅ Successfully clicked Next button")
+                
+                # Wait for next page to load (from your original code)
+                time.sleep(PAGE_LOAD_DELAY)
+                page_number += 1
+                
+            except Exception as e:
+                # print(f"❌ Failed to click Next button: {e}")
+                # print("🛑 Stopping pagination")
+                break
+        
+        # print(f"\n🎉 Scraping complete!")
+        # print(f"📊 Total pages processed: {page_number - 1}")
+        # print(f"📊 Total listings extracted: {len(all_listings)}")
+        
         return all_listings, listings_per_page
-
+        
     except Exception as e:
-        logger.error(f"Error during scraping: {str(e)}")
-        raise
+        print(f"💥 Error during complete scraping: {str(e)}")
+        return [], []
     finally:
         if driver:
+            print("🧹 Closing browser...")
             driver.quit()
 
-# def clear_currency_rates_cache():
-#     """Clear cached currency rates from the database."""
-#     conn = sqlite3.connect(DB_FILE)
-#     cursor = conn.cursor()
-#     try:
-#         cursor.execute("DELETE FROM currency_rates WHERE base_currency = ?", (BASE_CURRENCY,))
-#         conn.commit()
-#         # Clear Streamlit cache related to currency rates if any
-#         st.cache_data.clear()
-#         logger.info("Currency rates cache cleared successfully.")
-#     except Exception as e:
-#         logger.error(f"Error clearing currency rates cache: {str(e)}")
-#     finally:
-#         conn.close()
-
-def create_sidebar():
-    """Create and manage the sidebar with cache information."""
-    with st.sidebar:
-        st.title("Cache Management")
-
-        # # Display current exchange rates
-        # st.subheader("Today's Exchange Rates")
-        # rates, rates_timestamp = get_currency_rates()
-        # if rates:
-        #     st.write(f"**Exchange Rates as of:** {rates_timestamp}")
-        #     st.write(f"1 {BASE_CURRENCY} = {rates['SAR']:.4f} SAR")
-        #     st.write(f"1 {BASE_CURRENCY} = {rates['AED']:.4f} AED")
-        #     st.write(f"1 {BASE_CURRENCY} = {rates['USD']:.4f} USD")
-        # else:
-        #     st.write("Failed to fetch exchange rates.")
-
-        # Display cached locations and timestamps
-        st.subheader("Cached Locations")
-        cached_locations = get_cached_locations()
-
-        if cached_locations:
-            for location, timestamp in cached_locations:
-                st.write(f"📍 **{location}**")
-                st.write(f"🕒 Cached at: {timestamp}")
-                st.divider()
-        else:
-            st.write("No cached locations available")
-
-        # Cache management buttons
-        st.subheader("Cache Controls")
-        if st.button("Clear All Cache"):
-            clear_all_cache()
-            st.success("All cache cleared successfully!")
-
-        # Clear specific location cache
-        if cached_locations:
-            st.subheader("Clear Specific Location Cache")
-            locations = [loc[0] for loc in cached_locations]
-            selected_location = st.selectbox("Select location to clear:", locations)
-            if st.button(f"Clear {selected_location} Cache"):
-                clear_location_cache(selected_location)
-                st.success(f"Cache cleared for {selected_location}!")
-
-        # # Currency Rates Cache Controls
-        # st.subheader("Currency Rates Cache Controls")
-        # if st.button("Clear Currency Rates Cache"):
-        #     clear_currency_rates_cache()
-        #     st.success("Currency rates cache cleared successfully!")
-
-def main():
-    st.set_page_config(page_title="Airbnb Scraper", layout="wide")
-    st.title("Airbnb Listings Scraper")
+def main_step3_complete():
+    """Main function for Step 3 - Complete scraping with DataFrame creation"""
+    st.set_page_config(page_title="Step 3: Complete Airbnb Scraping", layout="wide")
+    # st.title("Step 3: Complete Airbnb Scraping with Data Extraction")
+    # st.write("This will scrape ALL pages and create a DataFrame with Title, Rating, Reviews, URL, and Price.")
     
-    # Initialize database and clean up stale cache
-    init_db()
-    cleanup_stale_cache()
-    
-    # Create sidebar
-    create_sidebar()
-
-    # User Input
-    # chrome_driver_path = st.text_input(
-    #     "Enter ChromeDriver Path:",
-    #     value=r"C:\Users\Chesta\Downloads\chromedriver-win64_130\chromedriver-win64\chromedriver.exe",
-    #     help="Enter the path to your ChromeDriver executable."
-    # )
-    
+    # User input for location
     search_location = st.text_input(
         "Enter Search Location:",
         value="Riyadh",
-        help="Enter a location to scrape Airbnb listings."
+        help="Enter a location to search on Airbnb"
     )
-    normalized_input = normalize_location(search_location)
-    # Scrape Listings
-    if st.button("Extract Listings"):
-        # if not chrome_driver_path.strip() or not search_location.strip():
-        #     st.error("Please provide both ChromeDriver path and search location.")
-        #     return
-
-        with st.spinner("Extracting listings..."):
+    
+    # Complete scraping
+    if st.button("🚀 Complete Scraping"):
+        if not search_location.strip():
+            st.error("Please enter a search location.")
+            return
+            
+        with st.spinner("Extracting all listings..."):
             try:
-                # Check if data is already cached in Streamlit
-                listings, listings_per_page = scrape_listings(normalized_input)
+                # Run complete scraping
+                listings, listings_per_page = scrape_all_listings_complete(search_location)
                 
-                # Display Results   
-                total_listings = len(listings)
-                st.success(f"Scraping complete! Total listings found: {total_listings}")
-
-                tab1, tab2 = st.tabs(["Listings Summary", "Raw Data"])
-
-                with tab1:
-                    st.write("### Listings Per Page:")
-                    for i, count in enumerate(listings_per_page, start=1):
-                        st.write(f"Page {i}: {count} listings")
-                    st.write(f"### Total Listings: {total_listings}")
-
-                with tab2:
-                    st.write("### Raw Data")
-                    df = pd.DataFrame(listings)
-                    df.index.name = "S.No."
-                    st.dataframe(df)
-
-                    # CSV Download
-                    csv = df.to_csv(index=False)
-                    st.download_button(
-                        label="Download Listings as CSV",
-                        data=csv,
-                        file_name=f"airbnb_listings_{search_location}.csv",
-                        mime="text/csv"
-                    )
-
+                if listings:
+                    total_listings = len(listings)
+                    st.success(f"🎉 Scraping complete! Total listings found: {total_listings}")
+                    
+                    # Create tabs for results (from your original code)
+                    tab1, tab2 = st.tabs(["Listings Summary", "Raw Data"])
+                    
+                    with tab1:
+                        st.write("### Listings Per Page:")
+                        for i, count in enumerate(listings_per_page, start=1):
+                            st.write(f"Page {i}: {count} listings")
+                        st.write(f"### Total Listings: {total_listings}")
+                        
+                        # Show sample data
+                        if listings:
+                            st.write("### Sample Listing:")
+                            sample = listings[0]
+                            for key, value in sample.items():
+                                st.write(f"**{key}:** {value}")
+                    
+                    with tab2:
+                        st.write("### Complete DataFrame")
+                        # Create DataFrame (from your original code)
+                        df = pd.DataFrame(listings)
+                        df.index.name = "S.No."
+                        st.dataframe(df)
+                        
+                        # CSV Download (from your original code)
+                        csv = df.to_csv(index=False, encoding='utf-8-sig')
+                        st.download_button(
+                            label="Download Listings as CSV",
+                            data=csv,
+                            file_name=f"airbnb_listings_{search_location}.csv",
+                            mime="text/csv"
+                        )
+                        
+                        # Show DataFrame info
+                        st.write(f"**Shape:** {df.shape[0]} rows × {df.shape[1]} columns")
+                        st.write("**Columns:**")
+                        for col in df.columns:
+                            non_na_count = df[col].count()
+                            st.write(f"- {col}: {non_na_count}/{len(df)} values")
+                
+                else:
+                    st.error("❌ No listings found. Check the console for debugging info.")
+                    
             except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
+                st.error(f"💥 Error occurred: {str(e)}")
+                st.code(traceback.format_exc())
 
 if __name__ == "__main__":
-    main()
+    main_step3_complete()
