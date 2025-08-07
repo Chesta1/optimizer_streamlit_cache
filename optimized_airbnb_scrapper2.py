@@ -1090,7 +1090,7 @@ def extract_listing_data(element):
             'Rating': rating,                               # From your original code
             'Number of Reviews': num_reviews,               # Extracted from rating text
             'Listing-URL': listing_url,                     # From your original code
-            'Price Per Day (USD)': clean_price,          # From your original code
+            'Price (USD)': clean_price,          # From your original code
             # '7-Day Stay Cost (USD)': total_price,          # From your original code
         }
         
