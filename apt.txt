@@ -1,0 +1,13 @@
+chromium-browser
+chromedriver
+libnss3
+libatk1.0-0
+libatk-bridge2.0-0
+libxss1
+libasound2
+libcups2
+libdrm2
+libxrandr2
+libgbm1
+xdg-utils
+fonts-liberation
