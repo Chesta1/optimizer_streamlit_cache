@@ -938,39 +938,44 @@ import re
 # Constants from your original code
 WAIT_TIMEOUT = 15
 PAGE_LOAD_DELAY = 5
+
 def get_stealth_driver():
     """Create stealth driver for Streamlit Cloud with your packages.txt"""
     try:
-        print("🚀 Creating Stealth WebDriver for Streamlit Cloud...")
-        
         chrome_options = Options()
-        chrome_options.headless = True
         
-        # Your packages.txt should handle these dependencies
+        # Essential for cloud environments
+        chrome_options.add_argument("--headless=new")  # Use new headless mode
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--disable-features=ChromeHeadlessScreenshots")
-        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-software-rasterizer")
         
-        # Anti-detection
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
+        # Additional stability options
+        chrome_options.add_argument("--disable-background-timer-throttling")
+        chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+        chrome_options.add_argument("--disable-renderer-backgrounding")
+        chrome_options.add_argument("--disable-features=TranslateUI")
+        chrome_options.add_argument("--disable-ipc-flooding-protection")
+        chrome_options.add_argument("--remote-debugging-port=9222")
+        chrome_options.add_argument("--window-size=1920,1080")
         
-        # Try standard Streamlit Cloud paths
+        # Set binary location
+        chrome_options.binary_location = "/usr/bin/chromium"
+        
+        # Create service
         service = Service(executable_path='/usr/bin/chromedriver')
-        driver = webdriver.Chrome(service=service, options=chrome_options)
         
-        # Stealth scripts
-        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        # Create driver
+        driver = webdriver.Chrome(service=service, options=chrome_options)
         
         return driver
         
     except Exception as e:
-        st.error(f"ChromeDriver failed: {str(e)}")
+        st.error(f"Failed to initialize ChromeDriver: {str(e)}")
         raise
 
+    
 def handle_initial_popups(driver):
     """Handle popups that appear on initial page load."""
     print("🔍 Handling initial popups...")
